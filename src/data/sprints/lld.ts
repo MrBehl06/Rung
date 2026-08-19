@@ -1,0 +1,106 @@
+import type { SprintDef } from './types';
+
+/**
+ * Low Level Design — 60 topics across 5 categories.
+ *
+ * The pre-marked `Completed` rows are the original catalogue's starting state
+ * and must be preserved: they are what a brand-new save begins with.
+ */
+export const lld: SprintDef = {
+  id: 'lld',
+  name: 'Low Level Design',
+  short: 'LLD',
+  tagline: 'Objects, patterns, and code that reads clean',
+  icon: '🔬',
+  accent: 'var(--lld)',
+  categories: [
+    {
+      name: 'Principles',
+      rank: 0,
+      rows: [['SOLID Principles', 'Medium', 'Completed']],
+    },
+    {
+      name: 'Creational Patterns',
+      rank: 8,
+      rows: [
+        ['Factory', 'Easy', 'Completed'],
+        ['Abstract Factory', 'Medium'],
+        ['Builder', 'Easy'],
+        ['Singleton', 'Easy'],
+        ['Prototype', 'Medium'],
+      ],
+    },
+    {
+      name: 'Structural Patterns',
+      rank: 12,
+      rows: [
+        ['Adapter', 'Easy'],
+        ['Bridge', 'Medium'],
+        ['Composite', 'Medium'],
+        ['Decorator', 'Medium', 'Completed'],
+        ['Facade', 'Easy'],
+        ['Flyweight', 'Hard'],
+        ['Proxy', 'Medium'],
+      ],
+    },
+    {
+      name: 'Behavioral Patterns',
+      rank: 18,
+      rows: [
+        ['Observer', 'Medium', 'Completed'],
+        ['Strategy', 'Easy', 'Completed'],
+        ['Chain of Responsibility', 'Medium'],
+        ['Command', 'Medium'],
+        ['Interpreter', 'Hard'],
+        ['Iterator', 'Easy'],
+        ['Mediator', 'Medium'],
+        ['Memento', 'Medium'],
+        ['State', 'Medium'],
+        ['Template Method', 'Easy'],
+        ['Visitor', 'Hard'],
+      ],
+    },
+    {
+      name: 'LLD Problems',
+      rank: 32,
+      rows: [
+        ['Pizza Billing System', 'Easy'],
+        ['Vending Machine', 'Easy'],
+        ['ATM', 'Medium'],
+        ['Parking Lot', 'Medium'],
+        ['Library Management System', 'Medium'],
+        ['Restaurant Management System', 'Medium'],
+        ['Notify-Me Button', 'Easy'],
+        ['Tic-Tac-Toe', 'Easy'],
+        ['Snake & Ladder', 'Easy'],
+        ['Traffic Light System', 'Easy'],
+        ['Elevator System', 'Medium'],
+        ['Bowling Alley', 'Medium'],
+        ['Meeting Scheduler', 'Medium'],
+        ['Calendar Application', 'Medium'],
+        ['Car Rental System', 'Medium'],
+        ['Hotel Booking System', 'Medium'],
+        ['Airline Management System', 'Hard'],
+        ['Inventory Management System', 'Medium'],
+        ['Logging System', 'Easy'],
+        ['Cache Mechanism', 'Medium'],
+        ['Online Voting System', 'Medium'],
+        ['Learning Management System', 'Medium'],
+        ['Community Discussion Platform', 'Medium'],
+        ['Splitwise', 'Medium'],
+        ['Splitwise Simplify Algorithm', 'Hard'],
+        ['BookMyShow + Concurrency', 'Hard'],
+        ['Payment System', 'Hard'],
+        ['Chat System', 'Hard'],
+        ['Rate Limiter', 'Medium'],
+        ['Car Booking — Ola/Uber', 'Hard'],
+        ['CricBuzz / CricketInfo', 'Medium'],
+        ['Truecaller', 'Medium'],
+        ['LinkedIn', 'Hard'],
+        ['Amazon', 'Hard'],
+        ['Food Delivery — Swiggy/Zomato', 'Hard'],
+        ['Stock Exchange System', 'Hard'],
+      ],
+    },
+  ],
+};

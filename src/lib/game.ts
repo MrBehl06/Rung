@@ -203,7 +203,7 @@ export const TIER_COLOR: Record<Tier, string> = {
 
 export interface TreeNode {
   cat: string;
-  type: 'HLD' | 'LLD';
+  type: string;
   done: number;
   total: number;
   pct: number;
@@ -216,7 +216,7 @@ export interface TreeNode {
 
 const UNLOCK_AT = 40; // % of the previous node required
 
-export function skillTree(state: TrackerState, type: 'HLD' | 'LLD', order: string[]): TreeNode[] {
+export function skillTree(state: TrackerState, type: string, order: string[]): TreeNode[] {
   const nodes: TreeNode[] = [];
   let prevPct = 100; // first node is always open
   order.forEach((cat, index) => {

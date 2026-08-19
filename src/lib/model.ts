@@ -1,6 +1,6 @@
-import type { Difficulty, Status, Topic, TopicType, TrackerState } from '../types';
-import { DIFFS, STATUSES, TYPES } from '../types';
-import { CATS, seedRows } from '../data/seed';
+import type { Difficulty, Status, Topic, TrackerState } from '../types';
+import { DIFFS, STATUSES } from '../types';
+import { SPRINTS, getSprint, resolveSprint, seedRows } from '../data/sprints';
 import { KEY, SCHEMA, Storage } from './storage';
 import { nowISO, todayISO, uid } from './utils';
 
@@ -12,11 +12,13 @@ export function blankState(): TrackerState {
     history: {},
     removedSeeds: [],
     seenAchievements: [],
+    joinedSprints: [],
     ui: {
       theme: 'dark',
       view: 'dashboard',
+      activeSprint: null,
       collapsed: {},
-      filters: { q: '', type: 'all', category: 'all', status: 'all', difficulty: 'all' },
+      filters: { q: '', sprint: 'all', type: 'all', category: 'all', status: 'all', difficulty: 'all' },
     },
     createdAt: nowISO(),
     updatedAt: nowISO(),
@@ -25,7 +27,9 @@ export function blankState(): TrackerState {
 
 /** Coerce anything (old saves, imported files, command input) into a valid Topic. */
 export function makeTopic(o: Partial<Topic> & { name?: string }): Topic {
-  const type: TopicType = TYPES.includes(o.type as TopicType) ? (o.type as TopicType) : 'HLD';
+  // `o.type` is the pre-sprint field name — read for migration, never written back
+  const sprint = resolveSprint(o.sprint ?? o.type);
+  const def = getSprint(sprint) ?? SPRINTS[0];
   const status: Status = STATUSES.includes(o.status as Status) ? (o.status as Status) : 'Not Started';
   const difficulty: Difficulty = DIFFS.includes(o.difficulty as Difficulty)
     ? (o.difficulty as Difficulty)
@@ -35,8 +39,9 @@ export function makeTopic(o: Partial<Topic> & { name?: string }): Topic {
     id: o.id || uid(),
     sid: o.sid ?? null,
     name: String(o.name ?? '').trim(),
-    type,
-    category: o.category || CATS[type][0],
+    sprint,
+    type: def.short, // deprecated mirror, dropped in Task 10
+    category: o.category || def.categories[0].name,
     status,
     difficulty,
     notes: o.notes || '',
@@ -87,8 +92,35 @@ export function loadState(raw?: string | null): LoadResult {
     state.removedSeeds = saved.removedSeeds ?? [];
     state.seenAchievements = saved.seenAchievements ?? [];
     state.topics = saved.topics.map(makeTopic);
+
+    // --- joinedSprints: absent means a pre-sprint save, which had everything on ---
+    const savedJoined = (saved as { joinedSprints?: unknown }).joinedSprints;
+    state.joinedSprints = Array.isArray(savedJoined)
+      ? savedJoined.map(String).filter((id) => getSprint(id))
+      : state.topics.length
+        ? SPRINTS.map((s) => s.id)
+        : [];
+
+    // --- ui.view: 'hld' / 'lld' became the single 'sprint' view ---
+    const legacyView = String(state.ui.view);
+    if (legacyView === 'hld' || legacyView === 'lld') {
+      state.ui.activeSprint = legacyView;
+      state.ui.view = 'sprint';
+    }
+
+    // --- ui.filters.type: 'HLD' -> 'hld' ---
+    // Test the SAVED object, not the merged one: blank.ui.filters already
+    // supplies `sprint: 'all'`, so the merged value is never absent.
+    const savedFilters = (saved.ui?.filters ?? {}) as { sprint?: string; type?: string };
+    if (savedFilters.sprint == null) {
+      const legacyFilter = savedFilters.type;
+      state.ui.filters.sprint =
+        legacyFilter && legacyFilter !== 'all' ? resolveSprint(legacyFilter) : 'all';
+    }
   } else {
     state = blank;
+    // a genuinely fresh user picks a sprint before anything else
+    state.ui.view = 'sprints';
   }
 
   const bySid = new Set(state.topics.map((t) => t.sid).filter(Boolean));

@@ -6,7 +6,7 @@
  * used the old page on this origin keeps their progress after the React port.
  */
 export const KEY = 'hld-lld-tracker/v1';
-export const SCHEMA = 1;
+export const SCHEMA = 2;
 
 interface Driver {
   mode: 'localStorage' | 'memory';

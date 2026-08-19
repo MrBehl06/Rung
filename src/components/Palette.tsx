@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CommandResult, Topic, ViewId } from '../types';
+import { SPRINTS, getSprint } from '../data/sprints';
 import { runCommand } from '../lib/commands';
 import { store } from '../lib/store';
 import { toast } from '../lib/toasts';
@@ -13,12 +14,22 @@ import { Badge, TypeTag } from './primitives';
 const COMMAND_RE =
   /^(completed?|done|finish(ed)?|mark|start(ed|ing)?|begin|begun|doing|in\s*progress|revised?|needs?\s+revision|for\s+revision|move|reset|restart|clear|remove|delete|drop|today|focus|plan|note|notes|add|create|new|show|open|find|search|what|next|suggest|progress|status|stats|hld|lld|pattern|problem|overall|total)\b/i;
 
-const VIEW_TARGETS: { id: ViewId; label: string; icon: string }[] = [
+interface ViewTarget {
+  id: ViewId;
+  label: string;
+  icon: string;
+  /** set on sprint rows — routed through openSprint rather than switchView */
+  sprintId?: string;
+}
+
+/** fixed destinations plus one row per registered sprint */
+const VIEW_TARGETS: ViewTarget[] = [
   { id: 'dashboard', label: 'Base', icon: '◧' },
-  { id: 'hld', label: 'HLD', icon: '🏗' },
-  { id: 'lld', label: 'LLD', icon: '🔬' },
+  { id: 'sprints', label: 'Sprints', icon: '◈' },
+  ...SPRINTS.map((s) => ({ id: 'sprint' as ViewId, label: s.short, icon: s.icon, sprintId: s.id })),
   { id: 'today', label: 'Quests', icon: '⚔' },
   { id: 'revision', label: 'Review', icon: '↻' },
+  { id: 'calendar', label: 'Calendar', icon: '▦' },
   { id: 'awards', label: 'Awards', icon: '🏆' },
   { id: 'guide', label: 'Guide', icon: '?' },
 ];
@@ -84,7 +95,8 @@ export function Palette({ onClose, onOpenTopic }: Props) {
     const row = rows[i];
     if (!row) return;
     if (row.kind === 'view') {
-      store.switchView(row.v.id);
+      if (row.v.sprintId) store.openSprint(row.v.sprintId);
+      else store.switchView(row.v.id);
       onClose();
     } else {
       onOpenTopic(row.t.id);
@@ -172,11 +184,11 @@ export function Palette({ onClose, onOpenTopic }: Props) {
                     ) : (
                       <>
                         <span className="pr-ico" aria-hidden="true">
-                          {row.t.type === 'HLD' ? '🏗' : '🔬'}
+                          {getSprint(row.t.sprint)?.icon ?? '◈'}
                         </span>
                         <span className="pr-n">{row.t.name}</span>
                         <span className="pr-tags">
-                          <TypeTag type={row.t.type} />
+                          <TypeTag type={getSprint(row.t.sprint)?.short ?? row.t.sprint} />
                           <Badge status={row.t.status} />
                           <span className="xp-tag">+{xpFor(row.t)}</span>
                         </span>

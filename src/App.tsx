@@ -161,7 +161,7 @@ export default function App() {
       move: (q: string, cat: string) => {
         const t = pick(q);
         const f = findCategory(cat);
-        return t && f ? store.moveTopic(t.id, f.type, f.cat) : null;
+        return t && f ? store.moveTopic(t.id, f.sprint, f.cat) : null;
       },
       today: {
         add: (q: string) => { const t = pick(q); return store.addToday(t ? t.id : q); },

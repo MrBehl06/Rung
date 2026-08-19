@@ -1,6 +1,5 @@
-import type { CommandResult, Topic, TopicType } from '../types';
-import { TYPES } from '../types';
-import { CATS } from '../data/seed';
+import type { CommandResult, Topic } from '../types';
+import { SPRINTS, categoriesOf, getSprint, resolveSprint } from '../data/sprints';
 import { store } from './store';
 import { computeStats, suggestNext } from './stats';
 import { norm } from './utils';
@@ -46,12 +45,14 @@ export function matchTopic(query: string, pool?: Topic[]): MatchResult {
   return { hit: top.t, options: scored.slice(0, 6).map((x) => x.t) };
 }
 
-export function findCategory(text: string): { type: TopicType; cat: string } | null {
+export function findCategory(text: string): { sprint: string; cat: string } | null {
   const q = norm(text);
-  for (const type of TYPES) for (const c of CATS[type]) if (norm(c) === q) return { type, cat: c };
-  for (const type of TYPES) {
-    for (const c of CATS[type]) {
-      if (norm(c).includes(q) || q.includes(norm(c))) return { type, cat: c };
+  if (!q) return null;
+  for (const s of SPRINTS)
+    for (const c of categoriesOf(s.id)) if (norm(c) === q) return { sprint: s.id, cat: c };
+  for (const s of SPRINTS) {
+    for (const c of categoriesOf(s.id)) {
+      if (norm(c).includes(q) || q.includes(norm(c))) return { sprint: s.id, cat: c };
     }
   }
   return null;
@@ -67,7 +68,9 @@ function progressReply(scope: string): string {
     return `Design patterns: ${s.patterns.done}/${s.patterns.total} (${s.patterns.pct}%)`;
   if (scope === 'problems')
     return `Problems: ${s.problems.done}/${s.problems.total} (${s.problems.pct}%) — HLD ${s.hldProblems.done}/${s.hldProblems.total}, LLD ${s.lldProblems.done}/${s.lldProblems.total}`;
-  return `Overall: ${s.all.done}/${s.all.total} (${s.all.pct}%) · HLD ${s.hld.pct}% · LLD ${s.lld.pct}% · ${s.needsRevision.length} need revision`;
+  // registry-driven, so a newly added sprint shows up here for free
+  const per = SPRINTS.map((sp) => `${sp.short} ${s.bySprint[sp.id]?.pct ?? 0}%`).join(' · ');
+  return `Overall: ${s.all.done}/${s.all.total} (${s.all.pct}%) · ${per} · ${s.needsRevision.length} need revision`;
 }
 
 function miss(q: string, r?: MatchResult): CommandResult {
@@ -93,13 +96,18 @@ const CMDS: Cmd[] = [
   {
     re: /^(?:what\s+should\s+i\s+(?:study|do)\s*(?:next)?|next|suggest)\b/i,
     run: () => {
-      const n = suggestNext(store.getSnapshot(), 5);
-      return {
-        ok: true,
-        msg: n.length
-          ? 'Study next: ' + n.map((t) => `${t.name} (${t.type}·${t.difficulty})`).join(' · ')
-          : 'Everything is completed.',
-      };
+      const state = store.getSnapshot();
+      const n = suggestNext(state, 5);
+      if (n.length) {
+        return {
+          ok: true,
+          msg: 'Study next: ' + n.map((t) => `${t.name} (${getSprint(t.sprint)?.short}·${t.difficulty})`).join(' · '),
+        };
+      }
+      // an empty list means one of two very different things
+      return state.joinedSprints.length
+        ? { ok: true, msg: 'Everything in your sprints is completed.' }
+        : { ok: false, msg: 'No sprint joined yet — pick one from Sprints to get suggestions.' };
     },
   },
   {
@@ -116,31 +124,36 @@ const CMDS: Cmd[] = [
     re: /^(?:add|create|new)\s+(.+)$/i,
     run: (m) => {
       let rest = m[1].trim();
-      let type: TopicType | null = null;
+      let sprint: string | null = null;
       let cat: string | null = null;
 
-      const asType = rest.match(/\b(?:as|in|under|to)\s+(hld|lld)\b/i);
-      if (asType) {
-        type = asType[1].toUpperCase() as TopicType;
-        rest = rest.replace(asType[0], '').trim();
+      // "as hld" / "in lld" — built from the registry so new sprints work too.
+      // Anchored to the end so "to HLD Problems" is read as a category, not a
+      // sprint qualifier followed by a stray word.
+      const ids = SPRINTS.map((s) => s.id).join('|');
+      const asSprint = rest.match(new RegExp(`\\b(?:as|in|under|to)\\s+(${ids})\\s*$`, 'i'));
+      if (asSprint) {
+        sprint = resolveSprint(asSprint[1]);
+        rest = rest.replace(asSprint[0], '').trim();
       }
       const toCat = rest.match(/\s+(?:to|in|under)\s+(.+)$/i);
       if (toCat && toCat.index != null) {
         const f = findCategory(toCat[1]);
         if (f) {
           cat = f.cat;
-          type = type ?? f.type;
+          sprint = sprint ?? f.sprint;
           rest = rest.slice(0, toCat.index).trim();
         }
       }
       rest = rest.replace(/^(?:topic|problem|pattern)\s+/i, '').replace(/["'`]/g, '').trim();
       if (!rest) return { ok: false, msg: 'What should I add?' };
-      if (!type) type = 'HLD';
-      if (!cat) cat = type === 'HLD' ? 'HLD Problems' : 'LLD Problems';
+      if (!sprint) sprint = SPRINTS[0].id;
+      // default to the sprint's last category — the "Problems" bucket by convention
+      if (!cat) cat = categoriesOf(sprint).at(-1) ?? categoriesOf(sprint)[0];
 
-      const t = store.addTopic({ name: rest, type, category: cat });
+      const t = store.addTopic({ name: rest, sprint, category: cat });
       return t
-        ? { ok: true, msg: `Added “${t.name}” to ${t.type} · ${t.category}`, topic: t }
+        ? { ok: true, msg: `Added “${t.name}” to ${getSprint(t.sprint)?.short} · ${t.category}`, topic: t }
         : { ok: false, msg: 'Could not add that.' };
     },
   },
@@ -193,8 +206,12 @@ const CMDS: Cmd[] = [
       if (!r.hit) return miss(m[1], r);
       const f = findCategory(m[2]);
       if (!f) return { ok: false, msg: `No category matching “${m[2]}”.` };
-      store.moveTopic(r.hit.id, f.type, f.cat);
-      return { ok: true, msg: `Moved “${r.hit.name}” → ${f.type} · ${f.cat}`, topic: r.hit };
+      store.moveTopic(r.hit.id, f.sprint, f.cat);
+      return {
+        ok: true,
+        msg: `Moved “${r.hit.name}” → ${getSprint(f.sprint)?.short} · ${f.cat}`,
+        topic: r.hit,
+      };
     },
   },
   {
@@ -233,8 +250,8 @@ const CMDS: Cmd[] = [
     re: /^(?:show|open|find|search)\s+(.+)$/i,
     run: (m) => {
       const q = m[1].trim();
-      store.switchView('hld');
-      store.setFilters({ q, type: 'all' });
+      store.switchView('sprints');
+      store.setFilters({ q, sprint: 'all' });
       return { ok: true, msg: `Filtered by “${q}”` };
     },
   },

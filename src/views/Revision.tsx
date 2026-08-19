@@ -1,4 +1,5 @@
 import type { Topic, TrackerState } from '../types';
+import { getSprint } from '../data/sprints';
 import { store } from '../lib/store';
 import { toast } from '../lib/toasts';
 import { XP_PER_REVISION } from '../lib/game';
@@ -20,7 +21,7 @@ function ReviewCard({ t, onOpen }: { t: Topic; onOpen: (id: string) => void }) {
           {t.name}
         </button>
         <div className="rc-meta">
-          <TypeTag type={t.type} />
+          <TypeTag type={getSprint(t.sprint)?.short ?? t.sprint} />
           <span>{t.category}</span>
           <span className={`d-${t.difficulty}`}>{t.difficulty}</span>
           <Badge status={t.status} />

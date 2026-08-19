@@ -327,7 +327,7 @@ export function Dashboard({
                 {c.cat}
               </em>
             </span>
-            <Meter p={c.pct} cls={c.type === 'LLD' ? 'lld' : 'hld'} seg />
+            <Meter p={c.pct} cls="sprint" seg />
             <span className="num" style={{ fontFamily: 'var(--mono)', fontSize: 11.5, color: 'var(--tx-2)', textAlign: 'right' }}>
               {c.done}/{c.total}
             </span>

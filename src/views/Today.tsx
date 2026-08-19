@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getSprint } from '../data/sprints';
 import type { TrackerState } from '../types';
 import { completionStreak, suggestNext } from '../lib/stats';
 import { MAX_TODAY, store } from '../lib/store';
@@ -31,7 +32,7 @@ export function Today({
     .filter((t) => t.status !== 'Completed')
     .sort(
       (a, b) =>
-        a.type.localeCompare(b.type) || a.category.localeCompare(b.category) || a.name.localeCompare(b.name),
+        a.sprint.localeCompare(b.sprint) || a.category.localeCompare(b.category) || a.name.localeCompare(b.name),
     );
 
   return (
@@ -91,7 +92,7 @@ export function Today({
                           {it.carried ? <span className="tag" style={{ marginLeft: 7 }}>carried</span> : null}
                         </div>
                         <div className="q-m">
-                          {t ? `${t.type} · ${t.category} · ${t.difficulty}` : 'custom objective'}
+                          {t ? `${getSprint(t.sprint)?.short} · ${t.category} · ${t.difficulty}` : 'custom objective'}
                         </div>
                       </div>
                       <div className="row">
@@ -136,7 +137,7 @@ export function Today({
                 <option value="">Choose a topic…</option>
                 {pickable.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.type} · {t.name} — {t.category}
+                    {getSprint(t.sprint)?.short} · {t.name} — {t.category}
                   </option>
                 ))}
               </select>

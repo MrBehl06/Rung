@@ -1,4 +1,5 @@
 import type { Topic } from '../types';
+import { getSprint } from '../data/sprints';
 import { store } from '../lib/store';
 import { confirmDialog } from '../lib/dialog';
 import { toast } from '../lib/toasts';
@@ -65,7 +66,7 @@ export function TopicRow({ topic: t, onEdit, onOpen, noToday, selected, onSelect
           {overdue ? <span className="due-pill">review due</span> : null}
         </div>
         <div className="sub">
-          <TypeTag type={t.type} />
+          <TypeTag type={getSprint(t.sprint)?.short ?? t.sprint} />
           <span>{t.category}</span>
           <span className={`d-${t.difficulty}`}>{t.difficulty}</span>
           <span className="xp-tag">+{xpFor(t)} XP</span>

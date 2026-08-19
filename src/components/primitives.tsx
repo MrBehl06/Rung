@@ -1,4 +1,4 @@
-import type { Status, TopicType } from '../types';
+import type { Status } from '../types';
 import { slug } from '../lib/utils';
 
 export function Badge({ status }: { status: Status }) {
@@ -10,6 +10,6 @@ export function Badge({ status }: { status: Status }) {
   );
 }
 
-export function TypeTag({ type }: { type: TopicType }) {
+export function TypeTag({ type }: { type: string }) {
   return <span className={`tag ${type.toLowerCase()}`}>{type}</span>;
 }

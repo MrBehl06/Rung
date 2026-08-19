@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { getSprint } from '../data/sprints';
 import type { Status, Topic } from '../types';
 import { STATUSES } from '../types';
 import { store } from '../lib/store';
@@ -66,7 +67,7 @@ export function TopicDrawer({ topic: t, onClose, onEdit }: Props) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="dr-name">{t.name}</div>
             <div className="dr-meta">
-              <TypeTag type={t.type} />
+              <TypeTag type={getSprint(t.sprint)?.short ?? t.sprint} />
               <span>{t.category}</span>
               <span className={`d-${t.difficulty}`}>{t.difficulty}</span>
               <span className="xp-tag">+{xpFor(t)} XP</span>

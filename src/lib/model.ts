@@ -18,7 +18,7 @@ export function blankState(): TrackerState {
       view: 'dashboard',
       activeSprint: null,
       collapsed: {},
-      filters: { q: '', sprint: 'all', type: 'all', category: 'all', status: 'all', difficulty: 'all' },
+      filters: { q: '', sprint: 'all', category: 'all', status: 'all', difficulty: 'all' },
     },
     createdAt: nowISO(),
     updatedAt: nowISO(),
@@ -26,8 +26,9 @@ export function blankState(): TrackerState {
 }
 
 /** Coerce anything (old saves, imported files, command input) into a valid Topic. */
-export function makeTopic(o: Partial<Topic> & { name?: string }): Topic {
-  // `o.type` is the pre-sprint field name — read for migration, never written back
+export function makeTopic(o: Partial<Topic> & { name?: string; type?: string }): Topic {
+  // `type` is the pre-sprint field name. Old saves and exported backups still
+  // carry it, so it is read here forever — but never written back.
   const sprint = resolveSprint(o.sprint ?? o.type);
   const def = getSprint(sprint) ?? SPRINTS[0];
   const status: Status = STATUSES.includes(o.status as Status) ? (o.status as Status) : 'Not Started';
@@ -40,7 +41,6 @@ export function makeTopic(o: Partial<Topic> & { name?: string }): Topic {
     sid: o.sid ?? null,
     name: String(o.name ?? '').trim(),
     sprint,
-    type: def.short, // deprecated mirror, dropped in Task 10
     category: o.category || def.categories[0].name,
     status,
     difficulty,

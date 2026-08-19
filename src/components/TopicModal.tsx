@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Difficulty, Status, Topic, TopicType, TrackerState } from '../types';
-import { DIFFS, STATUSES, TYPES } from '../types';
-import { CATS } from '../data/seed';
+import type { Difficulty, Status, Topic, TrackerState } from '../types';
+import { DIFFS, STATUSES } from '../types';
+import { SPRINTS, categoriesOf } from '../data/sprints';
 import { store } from '../lib/store';
 import { toast } from '../lib/toasts';
 import { Icon } from './Icons';
@@ -17,8 +17,8 @@ export function TopicModal({ editing, state, onClose }: Props) {
   const nameRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState(editing?.name ?? '');
-  const [type, setType] = useState<TopicType>(editing?.type ?? 'HLD');
-  const [category, setCategory] = useState(editing?.category ?? CATS.HLD[0]);
+  const [sprint, setSprint] = useState<string>(editing?.sprint ?? SPRINTS[0].id);
+  const [category, setCategory] = useState(editing?.category ?? SPRINTS[0].categories[0].name);
   const [status, setStatus] = useState<Status>(editing?.status ?? 'Not Started');
   const [difficulty, setDifficulty] = useState<Difficulty>(editing?.difficulty ?? 'Medium');
   const [notes, setNotes] = useState(editing?.notes ?? '');
@@ -35,15 +35,17 @@ export function TopicModal({ editing, state, onClose }: Props) {
     };
   }, []);
 
-  // categories for the chosen type, plus any custom ones the user already uses
+  // categories for the chosen sprint, plus any custom ones the user already uses
   const cats = [
-    ...CATS[type],
-    ...state.topics.filter((x) => x.type === type && !CATS[type].includes(x.category)).map((x) => x.category),
+    ...categoriesOf(sprint),
+    ...state.topics
+      .filter((x) => x.sprint === sprint && !categoriesOf(sprint).includes(x.category))
+      .map((x) => x.category),
   ].filter((v, i, a) => a.indexOf(v) === i);
 
-  function pickType(next: TopicType) {
-    setType(next);
-    if (!CATS[next].includes(category)) setCategory(CATS[next][0]);
+  function pickSprint(next: string) {
+    setSprint(next);
+    if (!categoriesOf(next).includes(category)) setCategory(categoriesOf(next)[0]);
   }
 
   function save() {
@@ -55,7 +57,7 @@ export function TopicModal({ editing, state, onClose }: Props) {
     }
     const patch = {
       name: clean,
-      type,
+      sprint,
       category,
       status,
       difficulty,
@@ -125,12 +127,17 @@ export function TopicModal({ editing, state, onClose }: Props) {
                 fontWeight: 600,
               }}
             >
-              Type
+              Sprint
             </span>
             <div className="seg">
-              {TYPES.map((x) => (
-                <button key={x} type="button" aria-pressed={x === type} onClick={() => pickType(x)}>
-                  {x}
+              {SPRINTS.map((x) => (
+                <button
+                  key={x.id}
+                  type="button"
+                  aria-pressed={x.id === sprint}
+                  onClick={() => pickSprint(x.id)}
+                >
+                  {x.short}
                 </button>
               ))}
             </div>

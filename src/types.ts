@@ -4,11 +4,6 @@ export const DIFFS = ['Easy', 'Medium', 'Hard'] as const;
 export type Status = (typeof STATUSES)[number];
 export type Difficulty = (typeof DIFFS)[number];
 
-/** @deprecated transitional — removed in Task 10. Use the sprint id string. */
-export type TopicType = string;
-/** @deprecated transitional shim so unmigrated consumers compile — removed in Task 10. */
-export const TYPES: readonly string[] = ['HLD', 'LLD'];
-
 export type ViewId =
   | 'dashboard'
   | 'sprints'
@@ -17,10 +12,7 @@ export type ViewId =
   | 'revision'
   | 'calendar'
   | 'awards'
-  | 'guide'
-  /** @deprecated transitional — migrated to 'sprint' in Task 8 */
-  | 'hld'
-  | 'lld';
+  | 'guide';
 
 /** digit-shortcut order; the 'sprint' view is reached by click, not by number */
 export const VIEWS: ViewId[] = [
@@ -34,8 +26,6 @@ export interface Topic {
   name: string;
   /** registered sprint id, e.g. 'hld' */
   sprint: string;
-  /** @deprecated legacy mirror of the sprint's short label — removed in Task 10 */
-  type: string;
   category: string;
   status: Status;
   difficulty: Difficulty;
@@ -65,8 +55,6 @@ export interface Filters {
   q: string;
   /** registered sprint id, or 'all' */
   sprint: string | 'all';
-  /** @deprecated transitional mirror — removed in Task 10 */
-  type: TopicType | 'all';
   category: string;
   status: Status | 'all';
   difficulty: Difficulty | 'all';
@@ -113,7 +101,8 @@ export interface Stat {
 }
 
 export interface CategoryStat extends Stat {
-  type: TopicType;
+  /** sprint short label, for display */
+  type: string;
   cat: string;
   custom?: boolean;
 }
@@ -126,9 +115,9 @@ export interface Stats {
   all: Stat;
   /** per-registered-sprint totals, keyed by sprint id */
   bySprint: Record<string, Stat>;
-  /** @deprecated derived alias kept for the documented console API */
+  /** derived alias kept for the documented console API */
   hld: Stat;
-  /** @deprecated derived alias kept for the documented console API */
+  /** derived alias kept for the documented console API */
   lld: Stat;
   patterns: Stat;
   problems: Stat;

@@ -1,4 +1,7 @@
-# HLD + LLD Tracker
+# Interview Sprint Tracker
+
+Track what you are actually preparing for. **HLD** and **LLD** ship as the first two
+*sprints*; more can be added as data files without touching a line of UI code.
 
 React + TypeScript + Vite. No backend, no account, no database.
 All progress lives in your browser's `localStorage` under the key `hld-lld-tracker/v1`.
@@ -27,12 +30,45 @@ Build command `npm run build`, output directory `dist`. Both are detected automa
 each keep a separate copy. Pick one URL and stay on it; to migrate, Export on the old one and
 Import on the new one.
 
+## Interview sprints
+
+A **sprint** is a curriculum you explicitly join. The Sprints hub lists the ones you are on,
+the ones you can add, and the tracks still on the roadmap.
+
+Joining or leaving scopes **attention, never data**:
+
+| | Scoped to joined sprints |
+|---|---|
+| Sidebar rows, Quests, Review queue, Dashboard mission | Yes |
+| Search and ⌘K | No — you can always reach anything |
+| **XP, levels, awards, streak, calendar history** | **No — lifetime, all sprints** |
+
+So leaving a sprint quiets it without ever costing you a level or re-locking a badge. Nothing
+is deleted, and rejoining restores it instantly. Completing a topic in a sprint you have left
+still earns XP and extends your streak — leaving changes what the app *suggests*, not what you
+are allowed to do.
+
+## Calendar
+
+A month grid built entirely from data the tracker already has:
+
+- **Past days** shade by completions logged that day, with the current streak run outlined.
+- **Future days** show `◷n` review pips, read from the spaced-repetition schedule — including
+  for topics completed before the SRS feature existed.
+- **Selecting a day** lists what you completed, revised, and what falls due, each opening the
+  topic drawer.
+
+`history` stores a count per day while a topic remembers only its latest completion, so a topic
+completed, reset and re-completed shows on the later date. When a day's logged count exceeds
+what can be named, the panel says `+N more` rather than misreporting it.
+
 ## Interface
 
 - **Sidebar** carries the persistent level/XP/streak HUD, so progression is visible on every
-  view. Collapses to a 64px icon rail (`B`), and the state persists.
-- **Mobile** swaps it for a bottom tab bar over the five main destinations, plus a drawer
-  holding the HUD, secondary views and actions.
+  view, plus one row per joined sprint. Collapses to a 64px icon rail (`B`), and the state
+  persists.
+- **Mobile** swaps it for a bottom tab bar over Base, Sprints, Quests, Review and Calendar,
+  plus a drawer holding the HUD, secondary views and actions.
 - **Topic drawer** — click any topic name for notes (autosaving), review schedule, status,
   and history. Notes are searchable from the list and from ⌘K.
 - **Bulk edit** — select rows with `X` or the checkbox, then complete / start / revise /
@@ -95,6 +131,41 @@ lazily from its completion date, and a flagged one is treated as due now.
 Systems, 21 HLD Problems) and LLD 60 (SOLID, Creational / Structural / Behavioral patterns,
 36 LLD Problems). Pre-marked completed: Factory, Decorator, Observer, Strategy, SOLID Principles.
 
+### Adding a sprint
+
+One data file plus one registry line — no UI, navigation or CSS changes. The sprint themes
+itself from its own `accent`, generates its own "clear the sprint" award, and appears on the
+hub, the sidebar, the dashboard and ⌘K automatically.
+
+```ts
+// src/data/sprints/striver.ts
+import type { SprintDef } from './types';
+
+export const striver: SprintDef = {
+  id: 'striver',                    // PERMANENT — see the warning below
+  name: 'Striver DSA',
+  short: 'DSA',
+  tagline: 'Arrays to graphs to DP',
+  icon: '🧮',
+  accent: '#22d3ee',
+  categories: [
+    { name: 'Arrays', rank: 0, rows: [['Two Sum', 'Easy'], ['3Sum', 'Medium']] },
+  ],
+};
+```
+
+```ts
+// src/data/sprints/index.ts
+export const SPRINTS: SprintDef[] = [hld, lld, striver];
+```
+
+> **A sprint `id` is permanent.** Each topic's stable `sid` is derived as
+> `` `${sprintId}|${category}|${name}` ``, and that string is how saved progress reattaches
+> to the catalogue on load. Renaming an id orphans every topic in that sprint. Renaming a
+> *category* or a *topic* orphans just that row. Removing a sprint file is safe: its topics
+> stay in the save, are reassigned to the first registered sprint, and the id is dropped from
+> `joinedSprints`.
+
 Progress is never hard-coded:
 
 ```
@@ -112,7 +183,9 @@ Add, delete, complete or reset anything and every number on the dashboard recomp
 | `⌘K` / `Ctrl K` | command bar |
 | `/` | focus search |
 | `N` | new topic |
-| `1`–`7` | switch views |
+| `1`–`7` | switch views (Base, Sprints, Quests, Review, Calendar, Awards, Guide) |
+| `[` / `]` | cycle between joined sprints |
+| `←` / `→` / `T` | calendar: previous month / next month / today |
 | `B` | collapse / expand the sidebar |
 | `J` / `K` | move the row cursor |
 | `Enter` | open the focused topic |
@@ -150,6 +223,9 @@ tracker.run('completed Parking Lot')  // plain-English command → { ok, msg, to
 tracker.level()                       // { level, rank, xp, into, span, toNext }
 tracker.awards()                      // 19 achievements with live progress
 tracker.streak()                      // current streak in days
+tracker.sprints()                     // { registered, joined }
+tracker.join('lld') | tracker.leave('lld')
+tracker.calendar(2026, 7)             // month grid cells (month is 0-indexed)
 tracker.stats()                       // { all, hld, lld, patterns, problems, byCat, byDiff, … }
 tracker.next(5)                       // ranked "study next" list
 tracker.topics()                      // every topic object
@@ -170,9 +246,13 @@ tracker.export() | tracker.wipe()
 src/
 ├── main.tsx            entry
 ├── App.tsx             shell: tabs, shortcuts, modals, console API
-├── styles.css          design tokens + all component styles
+├── styles/             tokens · base · layout · components · views
 ├── types.ts            Topic / TrackerState / Stats
-├── data/seed.ts        the 114-topic catalogue — edit here to add topics
+├── data/sprints/       the sprint registry — add a sprint here
+│   ├── index.ts        SPRINTS, getSprint, resolveSprint, seedRows
+│   ├── hld.ts          High Level Design — 54 topics
+│   ├── lld.ts          Low Level Design — 60 topics
+│   └── teasers.ts      locked roadmap cards
 ├── lib/
 │   ├── storage.ts      localStorage driver with in-memory fallback
 │   ├── model.ts        makeTopic, blankState, non-destructive seed merge
@@ -183,12 +263,16 @@ src/
 │   ├── toasts.ts       toast store
 │   └── utils.ts        date / string / percentage helpers
 │   ├── srs.ts          spaced-repetition ladder, due dates, review buckets
+│   ├── scope.ts        activeTopics — the single definition of "joined"
+│   ├── calendar.ts     month grid, day detail, consistency
 │   └── dialog.ts       themed promise-based confirm()
 ├── hooks/useFocusTrap.ts  keyboard trap + focus restore for overlays
-├── components/         Sidebar, Icons, hud, TopicRow, TopicDrawer, TopicModal,
-│                       Palette, ConfirmDialog
-└── views/              Dashboard, TopicsView, Today, Revision, Awards, Guide
+├── components/         Sidebar, Icons, hud, SprintCard, TopicRow, TopicDrawer,
+│                       TopicModal, Palette, ConfirmDialog
+└── views/              Dashboard, Sprints, TopicsView, Today, Revision,
+                        Calendar, Awards, Guide
 ```
 
-To add topics permanently, edit `SEED` in `src/data/seed.ts` and redeploy — existing progress
-survives because merging is keyed on a stable seed id derived from type + category + name.
+To add topics permanently, edit the relevant file in `src/data/sprints/` and redeploy —
+existing progress survives because merging is keyed on a stable seed id derived from
+sprint + category + name.

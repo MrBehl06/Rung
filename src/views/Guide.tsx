@@ -111,7 +111,7 @@ export function Guide({
 LLD %     = completed LLD topics / total LLD topics
 Overall % = completed topics      / total topics`}</pre>
         <p>
-          Editing <code>src/data/seed.ts</code> and redeploying keeps your progress: new topics are merged in,
+          Editing <code>src/data/sprints/</code> and redeploying keeps your progress: new topics are merged in,
           topics you deleted stay deleted, statuses you set are never overwritten.
         </p>
 

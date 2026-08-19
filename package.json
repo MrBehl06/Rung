@@ -3,7 +3,7 @@
   "private": true,
   "version": "2.0.0",
   "type": "module",
-  "description": "HLD + LLD Tracker — personal system design preparation dashboard",
+  "description": "Interview Sprint Tracker — joinable HLD/LLD sprints, streak calendar, spaced repetition",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

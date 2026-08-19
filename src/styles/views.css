@@ -356,12 +356,12 @@
    CALENDAR
    ============================================================ */
 .cal-nav{display:flex;gap:5px;align-items:center}
-.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px}
+.cal-dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-bottom:6px}
 .cal-dow span{
   font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3);text-align:center;letter-spacing:.4px;
 }
 /* cap the grid so cells stay legible squares instead of giant slabs on wide screens */
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
 .cal-c{
   position:relative;aspect-ratio:1;max-height:96px;border:1px solid var(--line);border-radius:var(--r-sm);
   background:var(--track);color:var(--tx-2);font:inherit;cursor:pointer;padding:6px;

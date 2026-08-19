@@ -4,12 +4,11 @@ import type {
   Status,
   TodayItem,
   Topic,
-  TopicType,
   TrackerState,
   ViewId,
 } from '../types';
-import { STATUSES, TYPES } from '../types';
-import { CATS } from '../data/seed';
+import { STATUSES } from '../types';
+import { SPRINTS, categoriesOf, getSprint, resolveSprint } from '../data/sprints';
 import { KEY, PERSISTENT, Storage } from './storage';
 import { blankState, loadState, makeTopic } from './model';
 import { SR_STEPS, addDays, stepDays } from './srs';
@@ -110,6 +109,7 @@ class TrackerStore {
       history: { ...this.state.history },
       removedSeeds: [...this.state.removedSeeds],
       seenAchievements: [...(this.state.seenAchievements ?? [])],
+      joinedSprints: [...this.state.joinedSprints],
       ui: {
         ...this.state.ui,
         collapsed: { ...this.state.ui.collapsed },
@@ -277,8 +277,9 @@ class TrackerStore {
       if (!t) return;
       const prevStatus = t.status;
       Object.assign(t, patch, { updatedAt: nowISO() });
-      if (!TYPES.includes(t.type)) t.type = 'HLD';
-      if (!CATS[t.type].includes(t.category) && !patch.category) t.category = CATS[t.type][0];
+      t.sprint = resolveSprint(t.sprint);
+      if (!categoriesOf(t.sprint).includes(t.category) && !patch.category)
+        t.category = categoriesOf(t.sprint)[0];
       if (!STATUSES.includes(t.status)) t.status = 'Not Started';
       if (prevStatus !== t.status) {
         if (t.status === 'Completed') {
@@ -324,15 +325,15 @@ class TrackerStore {
     toastUndo(`${ids.length} topic${ids.length > 1 ? 's' : ''} → ${status}`, () => this.undo(), 'ok');
   }
 
-  bulkMove(ids: string[], type: TopicType, category: string): void {
+  bulkMove(ids: string[], sprintId: string, category: string): void {
     if (!ids.length) return;
     this.checkpoint();
     this.produce((d) => {
       for (const id of ids) {
         const t = d.topics.find((x) => x.id === id);
         if (!t) continue;
-        if (TYPES.includes(type)) t.type = type;
-        t.category = CATS[t.type].includes(category) ? category : CATS[t.type][0];
+        t.sprint = resolveSprint(sprintId);
+        t.category = categoriesOf(t.sprint).includes(category) ? category : categoriesOf(t.sprint)[0];
         t.updatedAt = nowISO();
       }
     });
@@ -355,13 +356,13 @@ class TrackerStore {
     toastUndo(`Deleted ${ids.length} topic${ids.length > 1 ? 's' : ''}`, () => this.undo());
   }
 
-  moveTopic(id: string, type: TopicType, category: string): Topic | null {
+  moveTopic(id: string, sprintId: string, category: string): Topic | null {
     let result: Topic | null = null;
     this.produce((d) => {
       const t = d.topics.find((x) => x.id === id);
       if (!t) return;
-      if (TYPES.includes(type)) t.type = type;
-      t.category = CATS[t.type].includes(category) ? category : CATS[t.type][0];
+      t.sprint = resolveSprint(sprintId);
+      t.category = categoriesOf(t.sprint).includes(category) ? category : categoriesOf(t.sprint)[0];
       t.updatedAt = nowISO();
       result = t;
     });
@@ -451,11 +452,49 @@ class TrackerStore {
     });
   }
 
+  joinSprint(id: string): void {
+    if (!getSprint(id) || this.state.joinedSprints.includes(id)) return;
+    this.produce((d) => {
+      d.joinedSprints = [...d.joinedSprints, id];
+    });
+    toast(`Joined ${getSprint(id)?.name}`, 'ok');
+  }
+
+  /**
+   * Leaving hides a sprint from the sidebar, Quests and Review.
+   * Nothing is deleted — XP, awards, streak and every topic stay exactly as
+   * they are, so focusing never costs the user a level or a badge.
+   */
+  leaveSprint(id: string): void {
+    if (!this.state.joinedSprints.includes(id)) return;
+    this.checkpoint();
+    this.produce((d) => {
+      d.joinedSprints = d.joinedSprints.filter((x) => x !== id);
+      if (d.ui.activeSprint === id) {
+        d.ui.activeSprint = d.joinedSprints[0] ?? null;
+        if (!d.ui.activeSprint) d.ui.view = 'sprints';
+      }
+    });
+    toastUndo(`Left ${getSprint(id)?.name} — progress kept`, () => this.undo(), 'ok');
+  }
+
+  openSprint(id: string): void {
+    if (!getSprint(id)) return;
+    this.produce((d) => {
+      d.ui.view = 'sprint';
+      d.ui.activeSprint = id;
+      d.ui.filters.sprint = id;
+    });
+  }
+
   switchView(view: ViewId): void {
     this.produce((d) => {
       d.ui.view = view;
-      if (view === 'hld') d.ui.filters.type = 'HLD';
-      else if (view === 'lld') d.ui.filters.type = 'LLD';
+      if (view === 'sprint') {
+        const id = d.ui.activeSprint ?? d.joinedSprints[0] ?? SPRINTS[0].id;
+        d.ui.activeSprint = id;
+        d.ui.filters.sprint = id;
+      }
     });
   }
 
@@ -466,10 +505,10 @@ class TrackerStore {
   }
 
   clearFilters(): void {
-    const view = this.state.ui.view;
+    const { view, activeSprint } = this.state.ui;
     this.setFilters({
       q: '',
-      type: view === 'lld' ? 'LLD' : view === 'hld' ? 'HLD' : 'all',
+      sprint: view === 'sprint' && activeSprint ? activeSprint : 'all',
       category: 'all',
       status: 'all',
       difficulty: 'all',

@@ -6,8 +6,8 @@ import type {
   Topic,
   TrackerState,
 } from '../types';
-import { DIFFS, TYPES } from '../types';
-import { CATS } from '../data/seed';
+import { DIFFS } from '../types';
+import { SPRINTS, categoriesOf, categoryRank } from '../data/sprints';
 import { pct, todayISO } from './utils';
 
 /** Every number on the dashboard comes from here — nothing is ever stored. */
@@ -23,28 +23,35 @@ export function statsFor(list: Topic[]): Stat {
   return s;
 }
 
+export function statsForSprint(state: TrackerState, sprintId: string): Stat {
+  return statsFor(state.topics.filter((t) => t.sprint === sprintId));
+}
+
 export function computeStats(state: TrackerState): Stats {
   const all = state.topics;
-  const hld = all.filter((t) => t.type === 'HLD');
-  const lld = all.filter((t) => t.type === 'LLD');
+  const bySprint: Record<string, Stat> = {};
+  for (const s of SPRINTS) bySprint[s.id] = statsFor(all.filter((t) => t.sprint === s.id));
+
+  const hld = all.filter((t) => t.sprint === 'hld');
+  const lld = all.filter((t) => t.sprint === 'lld');
   const patterns = lld.filter((t) => /Patterns$/.test(t.category));
   const problems = all.filter((t) => /Problems$/.test(t.category));
 
   const byCat: CategoryStat[] = [];
-  for (const type of TYPES) {
-    for (const cat of CATS[type]) {
-      const list = all.filter((t) => t.type === type && t.category === cat);
-      if (list.length) byCat.push({ type, cat, ...statsFor(list) });
+  for (const s of SPRINTS) {
+    for (const cat of categoriesOf(s.id)) {
+      const list = all.filter((t) => t.sprint === s.id && t.category === cat);
+      if (list.length) byCat.push({ type: s.short, cat, ...statsFor(list) });
     }
   }
   // categories the user invented that aren't in the catalogue
   for (const t of all) {
     if (
-      !CATS[t.type].includes(t.category) &&
-      !byCat.some((c) => c.type === t.type && c.cat === t.category)
+      !categoriesOf(t.sprint).includes(t.category) &&
+      !byCat.some((c) => c.cat === t.category)
     ) {
-      const list = all.filter((x) => x.type === t.type && x.category === t.category);
-      byCat.push({ type: t.type, cat: t.category, custom: true, ...statsFor(list) });
+      const list = all.filter((x) => x.sprint === t.sprint && x.category === t.category);
+      byCat.push({ type: t.sprint, cat: t.category, custom: true, ...statsFor(list) });
     }
   }
 
@@ -55,6 +62,7 @@ export function computeStats(state: TrackerState): Stats {
 
   return {
     all: statsFor(all),
+    bySprint,
     hld: statsFor(hld),
     lld: statsFor(lld),
     patterns: statsFor(patterns),
@@ -94,19 +102,6 @@ export function completionStreak(state: TrackerState): number {
   return streak;
 }
 
-const CAT_RANK: Record<string, number> = {
-  'Fundamentals': 0,
-  'Principles': 0,
-  'Core Components': 8,
-  'Creational Patterns': 8,
-  'Structural Patterns': 12,
-  'Database & Storage': 14,
-  'Behavioral Patterns': 18,
-  'Distributed Systems': 24,
-  'HLD Problems': 32,
-  'LLD Problems': 32,
-};
-
 /** "What should I study next?" — resume work in flight, then fundamentals, then easy wins. */
 export function suggestNext(state: TrackerState, n = 5): Topic[] {
   const weight = (t: Topic): number => {
@@ -114,7 +109,7 @@ export function suggestNext(state: TrackerState, n = 5): Topic[] {
     if (t.status === 'In Progress') w -= 120;
     if (t.status === 'Needs Revision') w -= 90;
     if (t.status === 'Completed') w += 1000;
-    w += CAT_RANK[t.category] ?? 26;
+    w += categoryRank(t.sprint, t.category);
     w += { Easy: 0, Medium: 4, Hard: 9 }[t.difficulty] ?? 4;
     w += (t.order || 0) * 0.05;
     return w;

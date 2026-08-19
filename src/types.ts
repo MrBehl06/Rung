@@ -124,8 +124,8 @@ export interface DifficultyStat extends Stat {
 
 export interface Stats {
   all: Stat;
-  /** per-registered-sprint totals, keyed by sprint id — populated in Task 2 */
-  bySprint?: Record<string, Stat>;
+  /** per-registered-sprint totals, keyed by sprint id */
+  bySprint: Record<string, Stat>;
   /** @deprecated derived alias kept for the documented console API */
   hld: Stat;
   /** @deprecated derived alias kept for the documented console API */

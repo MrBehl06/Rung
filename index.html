@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="HLD + LLD Tracker — personal system design preparation dashboard" />
+    <meta name="color-scheme" content="dark light" />
+    <title>HLD + LLD Tracker</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23000000'/%3E%3Ctext x='50' y='68' font-size='54' font-family='monospace' font-weight='700' fill='%23ffffff' text-anchor='middle'%3E%26lt;%2F%26gt;%3C/text%3E%3C/svg%3E"
+    />
+    <script>
+      // Paint the saved theme before first render so there is no light flash.
+      try {
+        const raw = localStorage.getItem('hld-lld-tracker/v1');
+        const theme = raw ? JSON.parse(raw)?.ui?.theme : null;
+        if (theme === 'light' || theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', theme);
+        }
+      } catch (_) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

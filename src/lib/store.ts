@@ -1,0 +1,573 @@
+import type {
+  Filters,
+  SortKey,
+  Status,
+  TodayItem,
+  Topic,
+  TopicType,
+  TrackerState,
+  ViewId,
+} from '../types';
+import { STATUSES, TYPES } from '../types';
+import { CATS } from '../data/seed';
+import { KEY, PERSISTENT, Storage } from './storage';
+import { blankState, loadState, makeTopic } from './model';
+import { SR_STEPS, addDays, stepDays } from './srs';
+import { nowISO, todayISO, uid } from './utils';
+import { toast, toastUndo } from './toasts';
+import { confirmDialog } from './dialog';
+
+export const MAX_TODAY = 5;
+
+type Listener = () => void;
+
+class TrackerStore {
+  private state: TrackerState = blankState();
+  private listeners = new Set<Listener>();
+  private saveTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingWrite = false;
+  /** snapshots for undo of destructive actions, newest last */
+  private undoStack: TrackerState[] = [];
+  /** how many catalogue rows got merged in on boot */
+  seedsAdded = 0;
+
+  constructor() {
+    const { state, added } = loadState();
+    this.state = state;
+    this.seedsAdded = added;
+    if (added) this.writeNow();
+    this.rollTodayIfNeeded();
+    this.applyTheme(this.state.ui.theme);
+    this.wireWindow();
+  }
+
+  // ---------- subscription ----------
+  subscribe = (fn: Listener): (() => void) => {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  };
+
+  getSnapshot = (): TrackerState => this.state;
+
+  private emit(): void {
+    for (const fn of this.listeners) fn();
+  }
+
+  // ---------- persistence ----------
+  /**
+   * Data changes write synchronously — a debounce here would lose the last
+   * change if the tab closes right after it. Only cosmetic UI state (search
+   * text, collapsed sections) is deferred, and that is flushed on
+   * pagehide/visibilitychange so nothing escapes.
+   */
+  private writeNow(): void {
+    this.pendingWrite = false;
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    try {
+      Storage.set(KEY, JSON.stringify(this.state));
+    } catch (e) {
+      toast('Could not save — storage full or blocked', 'err');
+      console.error('[tracker] save failed', e);
+    }
+  }
+
+  private writeSoon(): void {
+    this.pendingWrite = true;
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.saveTimer = setTimeout(() => this.writeNow(), 250);
+  }
+
+  private wireWindow(): void {
+    window.addEventListener('pagehide', () => {
+      if (this.pendingWrite) this.writeNow();
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && this.pendingWrite) this.writeNow();
+    });
+    if (!PERSISTENT) return;
+    // keep multiple tabs of the hosted app in sync
+    window.addEventListener('storage', (e) => {
+      if (e.key !== KEY || !e.newValue) return;
+      try {
+        const incoming = JSON.parse(e.newValue) as Partial<TrackerState>;
+        if (!incoming || !Array.isArray(incoming.topics)) return;
+        this.state = { ...blankState(), ...incoming, topics: incoming.topics.map(makeTopic) };
+        this.applyTheme(this.state.ui.theme);
+        this.emit();
+        toast('Synced changes from another tab');
+      } catch {
+        /* ignore a malformed write from another tab */
+      }
+    });
+  }
+
+  /** Clone the slices a mutation can touch, apply it, then publish. */
+  private produce(fn: (draft: TrackerState) => void, persist: 'now' | 'soon' = 'now'): void {
+    const draft: TrackerState = {
+      ...this.state,
+      topics: this.state.topics.map((t) => ({ ...t })),
+      today: { ...this.state.today, items: this.state.today.items.map((i) => ({ ...i })) },
+      history: { ...this.state.history },
+      removedSeeds: [...this.state.removedSeeds],
+      seenAchievements: [...(this.state.seenAchievements ?? [])],
+      ui: {
+        ...this.state.ui,
+        collapsed: { ...this.state.ui.collapsed },
+        filters: { ...this.state.ui.filters },
+      },
+    };
+    fn(draft);
+    draft.updatedAt = nowISO();
+    this.state = draft;
+    if (persist === 'now') this.writeNow();
+    else this.writeSoon();
+    this.emit();
+  }
+
+  // ---------- undo ----------
+  /** capture the current state so the next destructive action can be reversed */
+  private checkpoint(): void {
+    this.undoStack.push(JSON.parse(JSON.stringify(this.state)) as TrackerState);
+    if (this.undoStack.length > 10) this.undoStack.shift();
+  }
+
+  canUndo(): boolean {
+    return this.undoStack.length > 0;
+  }
+
+  undo(): boolean {
+    const prev = this.undoStack.pop();
+    if (!prev) return false;
+    this.state = prev;
+    this.writeNow();
+    this.applyTheme(this.state.ui.theme);
+    this.emit();
+    return true;
+  }
+
+  // ---------- lookups ----------
+  find = (id: string): Topic | undefined => this.state.topics.find((t) => t.id === id);
+
+  private bumpHistory(draft: TrackerState, delta: number): void {
+    const d = todayISO();
+    draft.history[d] = Math.max(0, (draft.history[d] || 0) + delta);
+    if (!draft.history[d]) delete draft.history[d];
+  }
+
+  // ---------- topic mutations ----------
+  setStatus(id: string, status: Status): Topic | null {
+    if (!STATUSES.includes(status)) return null;
+    let result: Topic | null = null;
+    this.produce((d) => {
+      const t = d.topics.find((x) => x.id === id);
+      if (!t) return;
+      const prev = t.status;
+      result = t;
+      if (prev === status) return;
+
+      t.status = status;
+      t.updatedAt = nowISO();
+
+      if (status === 'In Progress' && !t.dateStarted) t.dateStarted = todayISO();
+      if (status === 'Completed') {
+        if (!t.dateStarted) t.dateStarted = todayISO();
+        t.dateCompleted = todayISO();
+        if (prev === 'Needs Revision') t.revisionCount += 1; // revised, then re-completed
+        if (prev !== 'Completed') this.bumpHistory(d, 1);
+        // first completion schedules the first review
+        if (t.srStep == null) t.srStep = 0;
+        t.srDue = addDays(todayISO(), stepDays(t.srStep));
+      }
+      if (status === 'Needs Revision') {
+        if (!t.dateCompleted) t.dateCompleted = todayISO();
+        // struggling drops back to the start of the ladder, due tomorrow
+        t.srStep = 0;
+        t.srDue = addDays(todayISO(), stepDays(0));
+      }
+      if (prev === 'Completed' && status !== 'Completed') this.bumpHistory(d, -1);
+      if (status === 'Not Started') {
+        t.dateStarted = null;
+        t.dateCompleted = null;
+        t.srStep = undefined;
+        t.srDue = null;
+      }
+
+      // keep Today's list in step
+      d.today.items.forEach((it) => {
+        if (it.topicId === id) it.done = status === 'Completed';
+      });
+    });
+    return result;
+  }
+
+  complete = (id: string) => this.setStatus(id, 'Completed');
+  start = (id: string) => this.setStatus(id, 'In Progress');
+  reset = (id: string) => this.setStatus(id, 'Not Started');
+  needsRevision = (id: string) => this.setStatus(id, 'Needs Revision');
+
+  toggleComplete(id: string): void {
+    const t = this.find(id);
+    if (!t) return;
+    this.setStatus(id, t.status === 'Completed' ? 'In Progress' : 'Completed');
+  }
+
+  /**
+   * Log a review. A clean recall walks up the spaced-repetition ladder;
+   * a struggle drops back to the first step and re-queues for tomorrow.
+   */
+  review(id: string, outcome: 'good' | 'hard'): Topic | null {
+    let result: Topic | null = null;
+    this.produce((d) => {
+      const t = d.topics.find((x) => x.id === id);
+      if (!t) return;
+      const wasCompleted = t.status === 'Completed';
+      t.revisionCount += 1;
+      t.lastRevisedAt = todayISO();
+      t.updatedAt = nowISO();
+
+      if (outcome === 'good') {
+        t.srStep = Math.min((t.srStep ?? 0) + 1, SR_STEPS.length - 1);
+        t.status = 'Completed';
+        t.dateCompleted = todayISO();
+        if (!wasCompleted) this.bumpHistory(d, 1);
+      } else {
+        t.srStep = 0;
+        t.status = 'Needs Revision';
+        if (wasCompleted) this.bumpHistory(d, -1);
+      }
+      t.srDue = addDays(todayISO(), stepDays(t.srStep));
+
+      d.today.items.forEach((it) => {
+        if (it.topicId === id) it.done = t.status === 'Completed';
+      });
+      result = t;
+    });
+    return result;
+  }
+
+  /** kept for the command engine + console API: "revised X" is a clean recall */
+  markRevised(id: string): Topic | null {
+    return this.review(id, 'good');
+  }
+
+  /** push a review out without logging a pass */
+  snooze(id: string, days: number): void {
+    this.produce((d) => {
+      const t = d.topics.find((x) => x.id === id);
+      if (!t) return;
+      t.srDue = addDays(todayISO(), days);
+      t.updatedAt = nowISO();
+    });
+  }
+
+  addTopic(data: Partial<Topic> & { name?: string }): Topic | null {
+    const t = makeTopic({ order: this.state.topics.length, ...data });
+    if (!t.name) return null;
+    this.produce((d) => {
+      d.topics.push(t);
+      if (t.status === 'Completed') this.bumpHistory(d, 1);
+    });
+    return t;
+  }
+
+  updateTopic(id: string, patch: Partial<Topic>): Topic | null {
+    let result: Topic | null = null;
+    this.produce((d) => {
+      const t = d.topics.find((x) => x.id === id);
+      if (!t) return;
+      const prevStatus = t.status;
+      Object.assign(t, patch, { updatedAt: nowISO() });
+      if (!TYPES.includes(t.type)) t.type = 'HLD';
+      if (!CATS[t.type].includes(t.category) && !patch.category) t.category = CATS[t.type][0];
+      if (!STATUSES.includes(t.status)) t.status = 'Not Started';
+      if (prevStatus !== t.status) {
+        if (t.status === 'Completed') {
+          t.dateCompleted = t.dateCompleted || todayISO();
+          this.bumpHistory(d, 1);
+        }
+        if (prevStatus === 'Completed') this.bumpHistory(d, -1);
+        if (t.status === 'In Progress' && !t.dateStarted) t.dateStarted = todayISO();
+        if (t.status === 'Not Started') {
+          t.dateStarted = null;
+          t.dateCompleted = null;
+        }
+      }
+      result = t;
+    });
+    return result;
+  }
+
+  deleteTopic(id: string, opts: { undo?: boolean } = {}): Topic | null {
+    const existing = this.find(id);
+    if (!existing) return null;
+    this.checkpoint();
+    this.produce((d) => {
+      const i = d.topics.findIndex((t) => t.id === id);
+      if (i < 0) return;
+      const [t] = d.topics.splice(i, 1);
+      // don't resurrect a deleted catalogue row on the next load
+      if (t.sid && !d.removedSeeds.includes(t.sid)) d.removedSeeds.push(t.sid);
+      if (t.status === 'Completed') this.bumpHistory(d, -1);
+      d.today.items = d.today.items.filter((it) => it.topicId !== id);
+    });
+    if (opts.undo !== false) {
+      toastUndo(`Deleted “${existing.name}”`, () => this.undo());
+    }
+    return existing;
+  }
+
+  // ---------- bulk ----------
+  bulkStatus(ids: string[], status: Status): void {
+    if (!ids.length) return;
+    this.checkpoint();
+    for (const id of ids) this.setStatus(id, status);
+    toastUndo(`${ids.length} topic${ids.length > 1 ? 's' : ''} → ${status}`, () => this.undo(), 'ok');
+  }
+
+  bulkMove(ids: string[], type: TopicType, category: string): void {
+    if (!ids.length) return;
+    this.checkpoint();
+    this.produce((d) => {
+      for (const id of ids) {
+        const t = d.topics.find((x) => x.id === id);
+        if (!t) continue;
+        if (TYPES.includes(type)) t.type = type;
+        t.category = CATS[t.type].includes(category) ? category : CATS[t.type][0];
+        t.updatedAt = nowISO();
+      }
+    });
+    toastUndo(`Moved ${ids.length} to ${category}`, () => this.undo(), 'ok');
+  }
+
+  bulkDelete(ids: string[]): void {
+    if (!ids.length) return;
+    this.checkpoint();
+    this.produce((d) => {
+      for (const id of ids) {
+        const i = d.topics.findIndex((t) => t.id === id);
+        if (i < 0) continue;
+        const [t] = d.topics.splice(i, 1);
+        if (t.sid && !d.removedSeeds.includes(t.sid)) d.removedSeeds.push(t.sid);
+        if (t.status === 'Completed') this.bumpHistory(d, -1);
+        d.today.items = d.today.items.filter((it) => it.topicId !== id);
+      }
+    });
+    toastUndo(`Deleted ${ids.length} topic${ids.length > 1 ? 's' : ''}`, () => this.undo());
+  }
+
+  moveTopic(id: string, type: TopicType, category: string): Topic | null {
+    let result: Topic | null = null;
+    this.produce((d) => {
+      const t = d.topics.find((x) => x.id === id);
+      if (!t) return;
+      if (TYPES.includes(type)) t.type = type;
+      t.category = CATS[t.type].includes(category) ? category : CATS[t.type][0];
+      t.updatedAt = nowISO();
+      result = t;
+    });
+    return result;
+  }
+
+  // ---------- today's focus ----------
+  private rollTodayIfNeeded(): void {
+    const d = todayISO();
+    if (this.state.today.date >= d) return; // today, or planned ahead → leave it
+    const carry = this.state.today.items.filter((it) => !it.done);
+    this.produce((draft) => {
+      draft.today = { date: d, items: carry.map((it) => ({ ...it, carried: true })) };
+    });
+  }
+
+  addToday(topicIdOrText: string): TodayItem | null {
+    if (this.state.today.items.length >= MAX_TODAY) {
+      toast(`Today's focus is capped at ${MAX_TODAY} topics`, 'warn');
+      return null;
+    }
+    const t = this.find(topicIdOrText);
+    const item: TodayItem = t
+      ? { id: uid(), topicId: t.id, text: t.name, done: t.status === 'Completed' }
+      : { id: uid(), topicId: null, text: String(topicIdOrText ?? '').trim(), done: false };
+    if (!item.text) return null;
+    if (item.topicId && this.state.today.items.some((i) => i.topicId === item.topicId)) {
+      toast('Already on today’s list', 'warn');
+      return null;
+    }
+    this.produce((d) => {
+      d.today.items.push(item);
+    });
+    return item;
+  }
+
+  toggleTodayDone(itemId: string): void {
+    const it = this.state.today.items.find((i) => i.id === itemId);
+    if (!it) return;
+    if (it.topicId) {
+      this.setStatus(it.topicId, !it.done ? 'Completed' : 'In Progress');
+      return;
+    }
+    this.produce((d) => {
+      const target = d.today.items.find((i) => i.id === itemId);
+      if (target) target.done = !target.done;
+    });
+  }
+
+  removeToday(itemId: string): void {
+    this.produce((d) => {
+      d.today.items = d.today.items.filter((i) => i.id !== itemId);
+    });
+  }
+
+  carryToTomorrow(): void {
+    const left = this.state.today.items.filter((i) => !i.done);
+    if (!left.length) {
+      toast('Nothing unfinished to carry over');
+      return;
+    }
+    this.produce((d) => {
+      d.today = {
+        date: todayISO(new Date(Date.now() + 864e5)),
+        items: left.map((i) => ({ ...i, carried: true })),
+      };
+    });
+    toast(`Carried ${left.length} topic${left.length > 1 ? 's' : ''} to tomorrow`, 'ok');
+  }
+
+  clearTodayDone(): void {
+    if (!this.state.today.items.some((i) => i.done)) return;
+    this.produce((d) => {
+      d.today.items = d.today.items.filter((i) => !i.done);
+    });
+  }
+
+  // ---------- ui ----------
+  private applyTheme(theme: 'dark' | 'light'): void {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+
+  setTheme(theme: 'dark' | 'light'): void {
+    this.applyTheme(theme);
+    this.produce((d) => {
+      d.ui.theme = theme;
+    });
+  }
+
+  switchView(view: ViewId): void {
+    this.produce((d) => {
+      d.ui.view = view;
+      if (view === 'hld') d.ui.filters.type = 'HLD';
+      else if (view === 'lld') d.ui.filters.type = 'LLD';
+    });
+  }
+
+  setFilters(patch: Partial<Filters>, persist: 'now' | 'soon' = 'now'): void {
+    this.produce((d) => {
+      d.ui.filters = { ...d.ui.filters, ...patch };
+    }, persist);
+  }
+
+  clearFilters(): void {
+    const view = this.state.ui.view;
+    this.setFilters({
+      q: '',
+      type: view === 'lld' ? 'LLD' : view === 'hld' ? 'HLD' : 'all',
+      category: 'all',
+      status: 'all',
+      difficulty: 'all',
+    });
+  }
+
+  toggleCollapsed(key: string): void {
+    this.produce((d) => {
+      d.ui.collapsed[key] = d.ui.collapsed[key] !== true;
+    }, 'soon');
+  }
+
+  setAllCollapsed(keys: string[], collapsed: boolean): void {
+    this.produce((d) => {
+      for (const k of keys) d.ui.collapsed[k] = collapsed;
+    });
+  }
+
+  toggleSidebar(): void {
+    this.produce((d) => {
+      d.ui.sidebar = d.ui.sidebar === 'collapsed' ? 'expanded' : 'collapsed';
+    }, 'soon');
+  }
+
+  setSort(sort: SortKey): void {
+    this.produce((d) => {
+      d.ui.sort = sort;
+    }, 'soon');
+  }
+
+  /** record that these achievement ids have been celebrated */
+  markAchievementsSeen(ids: string[]): void {
+    if (!ids.length) return;
+    this.produce((d) => {
+      const set = new Set([...(d.seenAchievements ?? []), ...ids]);
+      d.seenAchievements = [...set];
+    });
+  }
+
+  // ---------- backup ----------
+  exportData(): void {
+    const blob = new Blob([JSON.stringify(this.state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `hld-lld-tracker-${todayISO()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast('Backup downloaded', 'ok');
+  }
+
+  importFile(file: File): void {
+    const rd = new FileReader();
+    rd.onload = async () => {
+      try {
+        const data = JSON.parse(String(rd.result)) as Partial<TrackerState>;
+        if (!data || !Array.isArray(data.topics)) throw new Error('not a tracker backup');
+        const ok = await confirmDialog({
+          title: `Import ${data.topics.length} topics?`,
+          body: 'This replaces your current data. You can undo straight after.',
+          confirmLabel: 'Import',
+          danger: true,
+        });
+        if (!ok) return;
+        this.checkpoint();
+        Storage.set(KEY, JSON.stringify(data));
+        const { state } = loadState();
+        this.state = state;
+        this.writeNow();
+        this.applyTheme(this.state.ui.theme);
+        this.emit();
+        toastUndo(`Imported ${this.state.topics.length} topics`, () => this.undo(), 'ok');
+      } catch (e) {
+        toast('Import failed: ' + (e as Error).message, 'err', 4200);
+      }
+    };
+    rd.readAsText(file);
+  }
+
+  async wipe(): Promise<void> {
+    const ok = await confirmDialog({
+      title: 'Erase all progress?',
+      body: 'Every status, note, quest and streak is cleared and the default catalogue is restored.',
+      confirmLabel: 'Erase everything',
+      danger: true,
+    });
+    if (!ok) return;
+    this.checkpoint();
+    Storage.del(KEY);
+    const { state } = loadState(null);
+    this.state = state;
+    this.writeNow();
+    this.applyTheme(this.state.ui.theme);
+    this.emit();
+    toastUndo('Reset to the default catalogue', () => this.undo());
+  }
+}
+
+export const store = new TrackerStore();

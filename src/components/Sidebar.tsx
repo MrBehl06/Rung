@@ -1,5 +1,6 @@
 import type { Stats, TrackerState, ViewId } from '../types';
 import type { LevelInfo } from '../lib/game';
+import { joinedSprintDefs } from '../lib/scope';
 import { store } from '../lib/store';
 import { Icon } from './Icons';
 
@@ -9,16 +10,28 @@ export interface NavItem {
   icon: string;
   badge?: string;
   hot?: boolean;
+  /** set on dynamic sprint rows — routed through openSprint */
+  sprintId?: string;
 }
 
 export function navItems(state: TrackerState, stats: Stats, unlocked: number, dueCount: number): NavItem[] {
   const openQuests = state.today.items.filter((i) => !i.done).length;
+  // one row per joined sprint, so the fixed rows never shift as sprints are added
+  const sprintRows: NavItem[] = joinedSprintDefs(state).map((s) => ({
+    id: 'sprint',
+    sprintId: s.id,
+    label: s.short,
+    icon: s.icon,
+    badge: `${stats.bySprint[s.id]?.pct ?? 0}%`,
+  }));
+
   return [
     { id: 'dashboard', label: 'Base', icon: '◧' },
-    { id: 'hld', label: 'HLD', icon: '🏗', badge: `${stats.hld.pct}%` },
-    { id: 'lld', label: 'LLD', icon: '🔬', badge: `${stats.lld.pct}%` },
+    { id: 'sprints', label: 'Sprints', icon: '◈' },
+    ...sprintRows,
     { id: 'today', label: 'Quests', icon: '⚔', badge: String(openQuests), hot: openQuests > 0 },
     { id: 'revision', label: 'Review', icon: '↻', badge: String(dueCount), hot: dueCount > 0 },
+    { id: 'calendar', label: 'Calendar', icon: '▦' },
     { id: 'awards', label: 'Awards', icon: '🏆', badge: String(unlocked) },
     { id: 'guide', label: 'Guide', icon: '?' },
   ];
@@ -82,21 +95,26 @@ export function Sidebar({
       </div>
 
       <nav className="side-nav" aria-label="Main">
-        {items.map((it) => (
-          <button
-            key={it.id}
-            className="side-link"
-            aria-current={view === it.id ? 'page' : undefined}
-            title={collapsed ? it.label : undefined}
-            onClick={() => onNavigate(it.id)}
-          >
-            <span className="si" aria-hidden="true">{it.icon}</span>
-            <span className="sl">{it.label}</span>
-            {it.badge != null && it.badge !== '' ? (
-              <span className={`sb ${it.hot ? 'hot' : ''}`}>{it.badge}</span>
-            ) : null}
-          </button>
-        ))}
+        {items.map((it) => {
+          const current = it.sprintId
+            ? view === 'sprint' && state.ui.activeSprint === it.sprintId
+            : view === it.id;
+          return (
+            <button
+              key={it.sprintId ?? it.id}
+              className={`side-link ${it.sprintId ? 'is-sprint' : ''}`}
+              aria-current={current ? 'page' : undefined}
+              title={collapsed ? it.label : undefined}
+              onClick={() => (it.sprintId ? store.openSprint(it.sprintId) : onNavigate(it.id))}
+            >
+              <span className="si" aria-hidden="true">{it.icon}</span>
+              <span className="sl">{it.label}</span>
+              {it.badge != null && it.badge !== '' ? (
+                <span className={`sb ${it.hot ? 'hot' : ''}`}>{it.badge}</span>
+              ) : null}
+            </button>
+          );
+        })}
       </nav>
 
       <div className="side-foot">
@@ -128,19 +146,24 @@ export function Sidebar({
   );
 }
 
-/** fixed bottom bar on phones — the five destinations you actually switch between */
+/**
+ * Fixed bottom bar on phones — five real destinations.
+ * No "More" tab: the topbar ☰ already opens the full drawer.
+ */
 export function MobileNav({
   items,
   view,
   onNavigate,
-  onMore,
 }: {
   items: NavItem[];
   view: ViewId;
   onNavigate: (v: ViewId) => void;
-  onMore: () => void;
 }) {
-  const primary = items.filter((i) => i.id !== 'awards' && i.id !== 'guide');
+  const wanted: ViewId[] = ['dashboard', 'sprints', 'today', 'revision', 'calendar'];
+  const primary = wanted
+    .map((id) => items.find((i) => i.id === id && !i.sprintId))
+    .filter((i): i is NavItem => Boolean(i));
+
   return (
     <nav className="mnav" aria-label="Primary">
       {primary.map((it) => (
@@ -155,10 +178,6 @@ export function MobileNav({
           {it.badge && it.badge !== '0' ? <span className={`mb ${it.hot ? 'hot' : ''}`} /> : null}
         </button>
       ))}
-      <button className="mnav-b" onClick={onMore} aria-label="More">
-        <span className="mi" aria-hidden="true">☰</span>
-        <span className="ml">More</span>
-      </button>
     </nav>
   );
 }

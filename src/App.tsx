@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import type { ViewId } from './types';
 import { VIEWS } from './types';
 import { store } from './lib/store';
+import { SPRINTS } from './data/sprints';
+import { monthGrid } from './lib/calendar';
 import { dismissToast, toast, toastStore } from './lib/toasts';
 import { computeStats, completionStreak, suggestNext } from './lib/stats';
 import { findCategory, matchTopic, runCommand } from './lib/commands';
@@ -17,6 +19,8 @@ import { TopicModal } from './components/TopicModal';
 import { TopicDrawer } from './components/TopicDrawer';
 import { Palette } from './components/Palette';
 import { Dashboard } from './views/Dashboard';
+import { Sprints } from './views/Sprints';
+import { Calendar } from './views/Calendar';
 import { TopicsView } from './views/TopicsView';
 import { Today } from './views/Today';
 import { Revision } from './views/Revision';
@@ -102,8 +106,16 @@ export default function App() {
 
       if (e.key === '/') {
         e.preventDefault();
-        if (view !== 'hld' && view !== 'lld') store.switchView('hld');
+        if (view !== 'sprint') store.switchView('sprint');
         setTimeout(() => document.getElementById('fq')?.focus(), 40);
+      } else if (e.key === '[' || e.key === ']') {
+        // cycle between joined sprints without leaving the topics view
+        const ids = state.joinedSprints;
+        if (view !== 'sprint' || ids.length < 2) return;
+        e.preventDefault();
+        const i = ids.indexOf(state.ui.activeSprint ?? ids[0]);
+        const next = e.key === ']' ? (i + 1) % ids.length : (i - 1 + ids.length) % ids.length;
+        store.openSprint(ids[next]);
       } else if (e.key.toLowerCase() === 'n') {
         e.preventDefault();
         setModal({ id: null });
@@ -116,7 +128,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [view, anyOverlay]);
+  }, [view, anyOverlay, state.joinedSprints, state.ui.activeSprint]);
 
   // ---- boot notices ----
   useEffect(() => {
@@ -144,6 +156,14 @@ export default function App() {
       awards: () => achievements(store.getSnapshot()),
       streak: () => completionStreak(store.getSnapshot()),
       reviews: () => reviewBuckets(store.getSnapshot()),
+      sprints: () => ({
+        registered: SPRINTS.map((s) => ({ id: s.id, name: s.name })),
+        joined: store.getSnapshot().joinedSprints,
+      }),
+      join: (id: string) => store.joinSprint(id),
+      leave: (id: string) => store.leaveSprint(id),
+      calendar: (year = new Date().getFullYear(), month = new Date().getMonth()) =>
+        monthGrid(store.getSnapshot(), year, month),
       next: (n = 5) => suggestNext(store.getSnapshot(), n),
       topics: () => store.getSnapshot().topics,
       data: () => store.getSnapshot(),
@@ -240,15 +260,23 @@ export default function App() {
 
         <main>
           {view === 'dashboard' && <Dashboard state={state} stats={stats} onEdit={openEdit} onOpen={openDrawer} onGo={go} />}
-          {view === 'hld' && <TopicsView scope="HLD" state={state} onOpen={openDrawer} onEdit={openEdit} />}
-          {view === 'lld' && <TopicsView scope="LLD" state={state} onOpen={openDrawer} onEdit={openEdit} />}
+          {view === 'sprints' && <Sprints state={state} />}
+          {view === 'sprint' && (
+            <TopicsView
+              sprintId={state.ui.activeSprint ?? state.joinedSprints[0] ?? 'hld'}
+              state={state}
+              onOpen={openDrawer}
+              onEdit={openEdit}
+            />
+          )}
+          {view === 'calendar' && <Calendar state={state} onOpen={openDrawer} />}
           {view === 'today' && <Today state={state} onEdit={openEdit} onOpen={openDrawer} />}
           {view === 'revision' && <Revision state={state} onOpen={openDrawer} />}
           {view === 'awards' && <Awards state={state} />}
           {view === 'guide' && <Guide state={state} stats={stats} quests={quests} onImport={() => fileRef.current?.click()} />}
         </main>
 
-        <MobileNav items={items} view={view} onNavigate={go} onMore={() => setMobileNavOpen(true)} />
+        <MobileNav items={items} view={view} onNavigate={go} />
       </div>
 
       {/* mobile drawer holding the full sidebar */}

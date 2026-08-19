@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { Difficulty, SortKey, Status, Topic, TopicType, TrackerState } from '../types';
-import { DIFFS, STATUSES, TYPES } from '../types';
-import { CATS } from '../data/seed';
+import type { Difficulty, SortKey, Status, Topic, TrackerState } from '../types';
+import { DIFFS, STATUSES } from '../types';
+import { SPRINT_IDS, categoriesOf, getSprint } from '../data/sprints';
 import { statsFor } from '../lib/stats';
 import { skillTree, xpFor } from '../lib/game';
 import { store } from '../lib/store';
@@ -37,26 +37,25 @@ function sortTopics(list: Topic[], sort: SortKey): Topic[] {
   }
 }
 
-function allCategories(state: TrackerState, typeFilter: TopicType | 'all'): string[] {
+function allCategories(state: TrackerState, sprintFilter: string | 'all'): string[] {
   const set: string[] = [];
-  for (const type of TYPES) {
-    if (typeFilter !== 'all' && typeFilter !== type) continue;
-    for (const c of CATS[type]) if (!set.includes(c)) set.push(c);
+  for (const id of sprintFilter === 'all' ? SPRINT_IDS : [sprintFilter]) {
+    for (const c of categoriesOf(id)) if (!set.includes(c)) set.push(c);
   }
   for (const t of state.topics) {
-    if (typeFilter !== 'all' && t.type !== typeFilter) continue;
+    if (sprintFilter !== 'all' && t.sprint !== sprintFilter) continue;
     if (!set.includes(t.category)) set.push(t.category);
   }
   return set;
 }
 
 export function TopicsView({
-  scope,
+  sprintId,
   state,
   onOpen,
   onEdit,
 }: {
-  scope: TopicType;
+  sprintId: string;
   state: TrackerState;
   onOpen: (id: string) => void;
   onEdit: (id: string) => void;
@@ -64,7 +63,9 @@ export function TopicsView({
   const f = state.ui.filters;
   const sort = state.ui.sort ?? 'default';
   const q = norm(f.q);
-  const accent = scope === 'LLD' ? 'lld' : 'hld';
+  const def = getSprint(sprintId);
+  /** every accent on this view resolves through the --sprint custom property */
+  const accent = 'sprint';
 
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [cursor, setCursor] = useState(0);
@@ -72,7 +73,7 @@ export function TopicsView({
   const list = useMemo(
     () =>
       state.topics.filter((t) => {
-        if (f.type !== 'all' && t.type !== f.type) return false;
+        if (f.sprint !== 'all' && t.sprint !== f.sprint) return false;
         if (f.category !== 'all' && t.category !== f.category) return false;
         if (f.status !== 'all' && t.status !== f.status) return false;
         if (f.difficulty !== 'all' && t.difficulty !== f.difficulty) return false;
@@ -80,15 +81,15 @@ export function TopicsView({
           return false;
         return true;
       }),
-    [state.topics, f.type, f.category, f.status, f.difficulty, q],
+    [state.topics, f.sprint, f.category, f.status, f.difficulty, q],
   );
 
-  const scoped = state.topics.filter((t) => t.type === scope);
+  const scoped = state.topics.filter((t) => t.sprint === sprintId);
   const s = statsFor(scoped);
   const xpEarned = scoped.filter((t) => t.status === 'Completed').reduce((n, t) => n + xpFor(t), 0);
   const xpTotal = scoped.reduce((n, t) => n + xpFor(t), 0);
-  const tree = skillTree(state, scope.toLowerCase());
-  const cats = allCategories(state, f.type);
+  const tree = skillTree(state, sprintId);
+  const cats = allCategories(state, f.sprint);
 
   // grouped when in catalogue order, flat when explicitly sorted
   const grouped = sort === 'default';
@@ -104,7 +105,7 @@ export function TopicsView({
   /** the visible order, used by j/k and select-all */
   const ordered = grouped ? groups.flatMap(([, items]) => items) : flat;
 
-  useEffect(() => setCursor(0), [f.q, f.category, f.status, f.difficulty, sort, scope]);
+  useEffect(() => setCursor(0), [f.q, f.category, f.status, f.difficulty, sort, sprintId]);
 
   // j/k row navigation — only when not typing and no overlay is open
   useEffect(() => {
@@ -173,16 +174,16 @@ export function TopicsView({
   });
 
   return (
-    <section className="view">
+    <section className="view" style={{ ['--sprint' as string]: def?.accent ?? 'var(--hld)' }}>
       <div className="bento">
         <div className="c3">
           <Tile
-            k={`${scope} mastery`}
+            k={`${def?.short ?? ''} mastery`}
             v={`${s.pct}%`}
             m={`${s.done}/${s.total} cleared`}
             cls={accent}
             p={s.pct}
-            icon={scope === 'HLD' ? '🏗' : '🔬'}
+            icon={def?.icon}
           />
         </div>
         <div className="c3">
@@ -199,7 +200,7 @@ export function TopicsView({
       <div className="bento">
         <div className="c4">
           <div className="panel rail pad" style={{ height: '100%', ['--rail' as string]: `var(--${accent})` }}>
-            <SHead title={`${scope} path`} />
+            <SHead title={`${def?.short ?? ''} path`} />
             <SkillTree
               nodes={tree}
               onPick={(cat) => store.setFilters({ category: f.category === cat ? 'all' : cat })}
@@ -260,7 +261,7 @@ export function TopicsView({
 
           <div className="row wrap" style={{ margin: '-2px 0 11px' }}>
             <span className="count-note">
-              {list.length} shown · {scoped.length} in {scope}
+              {list.length} shown · {scoped.length} in {def?.short}
             </span>
             <span className="count-note dim" style={{ marginLeft: 12 }}>
               j/k move · enter open · x select
@@ -292,7 +293,7 @@ export function TopicsView({
             </div>
           ) : grouped ? (
             groups.map(([cat, items]) => {
-              const cs = statsFor(state.topics.filter((t) => t.category === cat && (f.type === 'all' || t.type === f.type)));
+              const cs = statsFor(state.topics.filter((t) => t.category === cat && (f.sprint === 'all' || t.sprint === f.sprint)));
               const key = slug(cat);
               const open = state.ui.collapsed[key] !== true;
               const mastered = cs.total > 0 && cs.done === cs.total;
@@ -352,12 +353,12 @@ export function TopicsView({
             value=""
             onChange={(e) => {
               if (!e.target.value) return;
-              store.bulkMove(pickedIds, scope, e.target.value);
+              store.bulkMove(pickedIds, sprintId, e.target.value);
               setPicked(new Set());
             }}
           >
             <option value="">Move to…</option>
-            {CATS[scope].map((c) => (
+            {categoriesOf(sprintId).map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>

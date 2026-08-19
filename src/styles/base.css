@@ -1,0 +1,31 @@
+/* Reset, element defaults, utility classes. */
+body{
+  margin:0; color:var(--tx); font-family:var(--sans);
+  font-size:var(--fs-md); line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  background:
+    linear-gradient(var(--bg-grid) 1px,transparent 1px) 0 0/34px 34px,
+    linear-gradient(90deg,var(--bg-grid) 1px,transparent 1px) 0 0/34px 34px,
+    radial-gradient(1100px 620px at 78% -12%,color-mix(in srgb,var(--lld) 13%,transparent),transparent 62%),
+    radial-gradient(900px 520px at 6% 0%,color-mix(in srgb,var(--hld) 11%,transparent),transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+  min-height:100vh;
+}
+
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--hld)}
+::selection{background:color-mix(in srgb,var(--xp) 32%,transparent)}
+:focus-visible{outline:2px solid var(--xp);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.muted{color:var(--tx-2)}
+.dim{color:var(--tx-3)}
+.hidden{display:none!important}
+.nowrap{white-space:nowrap}
+.spacer{flex:1 1 auto}
+.row{display:flex;align-items:center;gap:8px}
+.wrap{flex-wrap:wrap}
+
+/* numerals: tabular + tight, they carry the whole design */
+.num,.stat-v,.hud-lv b,.ring .t b{font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+

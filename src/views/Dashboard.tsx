@@ -1,5 +1,7 @@
-import type { Stats, TopicType, TrackerState, ViewId } from '../types';
-import { completionStreak, suggestNext } from '../lib/stats';
+import type { Stats, TrackerState, ViewId } from '../types';
+import { getSprint } from '../data/sprints';
+import { completionStreak, statsForSprint, suggestNext } from '../lib/stats';
+import { joinedSprintDefs } from '../lib/scope';
 import { achievements, levelInfo, longestStreak, questState, skillTree, xpFor } from '../lib/game';
 import { store } from '../lib/store';
 import { AchCard, Empty, HeroHud, Heatmap, Meter, Ring, SHead, SkillTree, Tile } from '../components/hud';
@@ -26,8 +28,11 @@ export function Dashboard({
   const ach = achievements(state);
   const unlocked = ach.filter((a) => a.unlocked);
   const next = suggestNext(state, 5);
-  const hldTree = skillTree(state, 'hld');
-  const lldTree = skillTree(state, 'lld');
+
+  // "Mission" = the sprints you joined. "Lifetime" = everything you have ever
+  // touched. Both appear on this screen, so both are labelled explicitly.
+  const joined = joinedSprintDefs(state);
+  const missionLabel = joined.length ? joined.map((sp) => sp.short).join(' + ') : '';
 
   // closest-to-done locked achievements make good "next targets"
   const nearly = ach
@@ -35,9 +40,9 @@ export function Dashboard({
     .sort((a, b) => b.cur / b.target - a.cur / a.target)
     .slice(0, 4);
 
-  function pickCat(cat: string, type: TopicType) {
-    store.switchView(type.toLowerCase() as ViewId);
-    store.setFilters({ category: cat, type, q: '', status: 'all', difficulty: 'all' });
+  function pickCat(cat: string, sprintId: string) {
+    store.openSprint(sprintId);
+    store.setFilters({ category: cat, sprint: sprintId, q: '', status: 'all', difficulty: 'all' });
   }
 
   return (
@@ -53,14 +58,34 @@ export function Dashboard({
         totalAch={ach.length}
       />
 
+      {/* ---- no sprint joined: point at the hub rather than showing empty tiles ---- */}
+      {!joined.length ? (
+        <div className="panel">
+          <Empty
+            icon="◈"
+            title="No sprint selected"
+            msg="Head to Sprints and join one to see your mission progress here. Your XP, awards and streak below are unaffected."
+          />
+        </div>
+      ) : null}
+
       {/* ---- vitals row ---- */}
       <div className="bento">
-        <div className="c3">
-          <Tile k="HLD" v={`${s.hld.pct}%`} m={`${s.hld.done}/${s.hld.total} cleared`} cls="hld" p={s.hld.pct} icon="🏗" />
-        </div>
-        <div className="c3">
-          <Tile k="LLD" v={`${s.lld.pct}%`} m={`${s.lld.done}/${s.lld.total} cleared`} cls="lld" p={s.lld.pct} icon="🔬" />
-        </div>
+        {joined.map((sp) => {
+          const st = statsForSprint(state, sp.id);
+          return (
+            <div className="c3" key={sp.id} style={{ ['--sprint' as string]: sp.accent }}>
+              <Tile
+                k={sp.short}
+                v={`${st.pct}%`}
+                m={`${st.done}/${st.total} cleared`}
+                cls="sprint"
+                p={st.pct}
+                icon={sp.icon}
+              />
+            </div>
+          );
+        })}
         <div className="c3">
           <Tile
             k="Patterns"
@@ -87,15 +112,17 @@ export function Dashboard({
       <div className="bento">
         <div className="c5">
           <div className="panel rail pad" style={{ height: '100%' }}>
-            <SHead title="Mastery" />
+            <SHead
+              title={missionLabel ? `Mission — ${missionLabel}` : 'Mission'}
+              sub="across your joined sprints"
+            />
             <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
               <Ring p={s.all.pct} label="Overall" color="var(--xp)" />
               <div style={{ flex: 1, minWidth: 170, display: 'flex', flexDirection: 'column', gap: 13 }}>
                 {[
-                  ['HLD', s.hld, 'hld'],
-                  ['LLD', s.lld, 'lld'],
-                  ['Patterns', s.patterns, 'ok'],
-                  ['Problems', s.problems, 'warn'],
+                  ...joined.map((sp) => [sp.short, statsForSprint(state, sp.id), 'sprint'] as const),
+                  ['Patterns', s.patterns, 'ok'] as const,
+                  ['Problems', s.problems, 'warn'] as const,
                 ].map(([label, st, cls]) => {
                   const stat = st as Stats['hld'];
                   return (
@@ -137,7 +164,7 @@ export function Dashboard({
 
         <div className="c7">
           <div className="panel rail fire pad" style={{ height: '100%' }}>
-            <SHead title="Activity" sub={`${streak}-day streak · best ${best}`} />
+            <SHead title="Lifetime" sub={`every sprint you have touched · ${streak}-day streak, best ${best}`} />
             <Heatmap state={state} weeks={20} />
 
             <div className="bento" style={{ marginTop: 16, marginBottom: 0, gap: 10 }}>
@@ -204,7 +231,7 @@ export function Dashboard({
                       <div>
                         <div className="q-t">{it.text}</div>
                         <div className="q-m">
-                          {t ? `${t.type} · ${t.category} · ${t.difficulty}` : 'custom objective'}
+                          {t ? `${getSprint(t.sprint)?.short} · ${t.category} · ${t.difficulty}` : 'custom objective'}
                         </div>
                       </div>
                       <span className="q-xp">+{t ? xpFor(t) : 10}</span>
@@ -244,21 +271,22 @@ export function Dashboard({
         </div>
       </div>
 
-      {/* ---- skill trees ---- */}
-      <div className="bento">
-        <div className="c6">
-          <div className="panel rail hld pad" style={{ height: '100%' }}>
-            <SHead title="HLD path" sub={`${s.hld.done}/${s.hld.total}`} />
-            <SkillTree nodes={hldTree} onPick={pickCat} />
-          </div>
+      {/* ---- skill trees, one per joined sprint ---- */}
+      {joined.length ? (
+        <div className="bento">
+          {joined.map((sp) => {
+            const st = statsForSprint(state, sp.id);
+            return (
+              <div className="c6" key={sp.id} style={{ ['--sprint' as string]: sp.accent }}>
+                <div className="panel rail sprint pad" style={{ height: '100%' }}>
+                  <SHead title={`${sp.short} path`} sub={`${st.done}/${st.total}`} />
+                  <SkillTree nodes={skillTree(state, sp.id)} onPick={pickCat} />
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <div className="c6">
-          <div className="panel rail lld pad" style={{ height: '100%' }}>
-            <SHead title="LLD path" sub={`${s.lld.done}/${s.lld.total}`} />
-            <SkillTree nodes={lldTree} onPick={pickCat} />
-          </div>
-        </div>
-      </div>
+      ) : null}
 
       {/* ---- achievements preview ---- */}
       <div className="panel rail pad section">

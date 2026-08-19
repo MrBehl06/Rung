@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Stats, TopicType, TrackerState } from '../types';
+import type { Stats, TrackerState } from '../types';
 import type { Achievement, HeatCell, LevelInfo, TreeNode } from '../lib/game';
 import { TIER_COLOR, heatmap } from '../lib/game';
 import { todayISO } from '../lib/utils';
@@ -172,7 +172,7 @@ export function SkillTree({
   onPick,
 }: {
   nodes: TreeNode[];
-  onPick: (cat: string, type: TopicType) => void;
+  onPick: (cat: string, sprint: string) => void;
 }) {
   return (
     <div className="tree">
@@ -188,9 +188,9 @@ export function SkillTree({
             color: 'inherit',
             cursor: 'pointer',
             width: '100%',
-            ['--rail' as string]: n.type === 'LLD' ? 'var(--lld)' : 'var(--hld)',
+            ['--rail' as string]: 'var(--sprint, var(--hld))',
           }}
-          onClick={() => onPick(n.cat, n.type)}
+          onClick={() => onPick(n.cat, n.sprint)}
           title={n.unlocked ? `Filter to ${n.cat}` : `Clear more of the previous track to unlock`}
         >
           <span className="node-dot">{n.mastered ? '✓' : n.unlocked ? n.index + 1 : '🔒'}</span>
@@ -202,7 +202,7 @@ export function SkillTree({
             <span className="node-meta">
               {n.done}/{n.total} cleared
             </span>
-            <Meter p={n.pct} cls={n.type === 'LLD' ? 'lld' : 'hld'} seg />
+            <Meter p={n.pct} cls="sprint" seg />
           </span>
           <span className="node-pct">{n.pct}%</span>
         </button>

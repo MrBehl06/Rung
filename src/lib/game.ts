@@ -1,4 +1,5 @@
 import type { Difficulty, Topic, TrackerState } from '../types';
+import { SPRINTS, categoriesOf } from '../data/sprints';
 import { computeStats, completionStreak } from './stats';
 import { todayISO } from './utils';
 
@@ -178,14 +179,28 @@ export function achievements(state: TrackerState): Achievement[] {
     { id: 'boss-slayer', name: 'Boss Slayer', desc: 'Complete 25 Hard topics', icon: '⚔️', tier: 'gold', cur: hardDone, target: 25 },
     { id: 'problem-solver', name: 'Problem Solver', desc: 'Complete 20 design problems', icon: '🧠', tier: 'silver', cur: s.problems.done, target: 20 },
     { id: 'halfway', name: 'Halfway There', desc: 'Reach 50% overall completion', icon: '🏔️', tier: 'silver', cur: s.all.pct, target: 50 },
-    { id: 'hld-master', name: 'HLD Master', desc: 'Complete every HLD topic', icon: '🏗️', tier: 'legendary', cur: s.hld.done, target: Math.max(1, s.hld.total) },
-    { id: 'lld-master', name: 'LLD Master', desc: 'Complete every LLD topic', icon: '🔬', tier: 'legendary', cur: s.lld.done, target: Math.max(1, s.lld.total) },
     { id: 'completionist', name: 'Completionist', desc: 'Complete the entire catalogue', icon: '👑', tier: 'legendary', cur: s.all.done, target: Math.max(1, s.all.total) },
     { id: 'consistent', name: 'Consistent', desc: 'Hold a 7-day streak', icon: '🔥', tier: 'bronze', cur: best, target: 7 },
     { id: 'relentless', name: 'Relentless', desc: 'Hold a 14-day streak', icon: '⚡', tier: 'silver', cur: best, target: 14 },
     { id: 'unstoppable', name: 'Unstoppable', desc: 'Hold a 30-day streak', icon: '💫', tier: 'legendary', cur: best, target: 30 },
     { id: 'scholar', name: 'Scholar', desc: 'Log 25 revisions', icon: '📚', tier: 'gold', cur: revisions, target: 25 },
   ];
+
+  // one legendary "clear the sprint" award per registered sprint.
+  // Ids match the previously hardcoded ones, so nothing re-celebrates.
+  for (const sp of SPRINTS) {
+    const st = s.bySprint[sp.id];
+    if (!st || !st.total) continue;
+    raw.push({
+      id: `${sp.id}-master`,
+      name: `${sp.short} Master`,
+      desc: `Complete every ${sp.short} topic`,
+      icon: sp.icon,
+      tier: 'legendary',
+      cur: st.done,
+      target: Math.max(1, st.total),
+    });
+  }
 
   return raw.map((a) => ({ ...a, cur: Math.min(a.cur, a.target), unlocked: a.cur >= a.target }));
 }
@@ -203,7 +218,7 @@ export const TIER_COLOR: Record<Tier, string> = {
 
 export interface TreeNode {
   cat: string;
-  type: string;
+  sprint: string;
   done: number;
   total: number;
   pct: number;
@@ -216,17 +231,17 @@ export interface TreeNode {
 
 const UNLOCK_AT = 40; // % of the previous node required
 
-export function skillTree(state: TrackerState, type: string, order: string[]): TreeNode[] {
+export function skillTree(state: TrackerState, sprintId: string): TreeNode[] {
   const nodes: TreeNode[] = [];
   let prevPct = 100; // first node is always open
-  order.forEach((cat, index) => {
-    const list = state.topics.filter((t) => t.type === type && t.category === cat);
+  categoriesOf(sprintId).forEach((cat, index) => {
+    const list = state.topics.filter((t) => t.sprint === sprintId && t.category === cat);
     const done = list.filter((t) => t.status === 'Completed').length;
     const total = list.length;
     const pct = total ? Math.round((done / total) * 100) : 0;
     nodes.push({
       cat,
-      type,
+      sprint: sprintId,
       done,
       total,
       pct,

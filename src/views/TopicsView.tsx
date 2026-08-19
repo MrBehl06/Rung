@@ -87,7 +87,7 @@ export function TopicsView({
   const s = statsFor(scoped);
   const xpEarned = scoped.filter((t) => t.status === 'Completed').reduce((n, t) => n + xpFor(t), 0);
   const xpTotal = scoped.reduce((n, t) => n + xpFor(t), 0);
-  const tree = skillTree(state, scope, CATS[scope]);
+  const tree = skillTree(state, scope.toLowerCase());
   const cats = allCategories(state, f.type);
 
   // grouped when in catalogue order, flat when explicitly sorted

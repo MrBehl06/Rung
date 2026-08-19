@@ -1,5 +1,4 @@
 import type { Stats, TopicType, TrackerState, ViewId } from '../types';
-import { CATS } from '../data/seed';
 import { completionStreak, suggestNext } from '../lib/stats';
 import { achievements, levelInfo, longestStreak, questState, skillTree, xpFor } from '../lib/game';
 import { store } from '../lib/store';
@@ -27,8 +26,8 @@ export function Dashboard({
   const ach = achievements(state);
   const unlocked = ach.filter((a) => a.unlocked);
   const next = suggestNext(state, 5);
-  const hldTree = skillTree(state, 'HLD', CATS.HLD);
-  const lldTree = skillTree(state, 'LLD', CATS.LLD);
+  const hldTree = skillTree(state, 'hld');
+  const lldTree = skillTree(state, 'lld');
 
   // closest-to-done locked achievements make good "next targets"
   const nearly = ach

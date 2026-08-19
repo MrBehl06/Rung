@@ -15,7 +15,7 @@
   width:32px;height:32px;flex:none;display:grid;place-items:center;font-family:var(--mono);
   font-size:13px;font-weight:800;color:#07070c;
   background:linear-gradient(140deg,var(--xp),var(--xp-2));
-  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
+  border-radius:var(--r-sm);
   box-shadow:0 0 18px color-mix(in srgb,var(--xp) calc(var(--glow) * 60%),transparent);
 }
 .side-brand-txt{display:flex;flex-direction:column;line-height:1.15;min-width:0}
@@ -25,7 +25,7 @@
 /* persistent progression block */
 .side-hud{
   padding:11px 12px;background:var(--panel-3);border:1px solid var(--line);
-  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px);
+  border-radius:var(--r-md);
 }
 .side-hud-top{display:flex;align-items:center;gap:9px}
 .side-lv{
@@ -51,7 +51,7 @@
   display:flex;align-items:center;gap:11px;width:100%;padding:9px 11px;
   background:transparent;border:1px solid transparent;color:var(--tx-2);cursor:pointer;
   font-size:13px;font-weight:650;text-align:left;
-  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
+  border-radius:var(--r-sm);
   transition:background .12s,color .12s;
 }
 .side-link:hover{background:var(--panel-3);color:var(--tx)}
@@ -102,7 +102,7 @@
   display:flex;align-items:center;gap:9px;flex:1;max-width:460px;cursor:pointer;
   padding:8px 12px;background:var(--panel-2);border:1px solid var(--line);color:var(--tx-3);
   font-size:12.5px;text-align:left;
-  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
+  border-radius:var(--r-sm);
 }
 .omni:hover{border-color:var(--line-2);color:var(--tx-2)}
 .omni span:nth-child(2){flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

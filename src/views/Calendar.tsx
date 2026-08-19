@@ -81,7 +81,9 @@ export function Calendar({ state, onOpen }: { state: TrackerState; onOpen: (id: 
         </div>
       </div>
 
-      <div className="panel pad">
+      <div className="bento">
+        <div className="c7">
+        <div className="panel pad" style={{ height: '100%' }}>
         <SHead
           title={label}
           sub="← → change month · T today"
@@ -123,10 +125,12 @@ export function Calendar({ state, onOpen }: { state: TrackerState; onOpen: (id: 
             </button>
           ))}
         </div>
-      </div>
+        </div>
+        </div>
 
+        <div className="c5">
       {detail ? (
-        <div className="panel pad">
+        <div className="panel pad" style={{ height: '100%' }}>
           <SHead
             title={detail.date}
             sub={`${detail.completed.length} completed · ${detail.revised.length} revised`}
@@ -161,6 +165,8 @@ export function Calendar({ state, onOpen }: { state: TrackerState; onOpen: (id: 
           ) : null}
         </div>
       ) : null}
+        </div>
+      </div>
     </section>
   );
 }

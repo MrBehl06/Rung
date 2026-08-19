@@ -19,6 +19,21 @@ html{-webkit-text-size-adjust:100%}
   --tier-silver:#b9c4d0;
   --tier-gold:#ffc541;
   --tier-legendary:#ff7ae5;
+
+  /* radius scale — replaces most bevel clip-paths */
+  --r-sm:8px; --r-md:12px; --r-lg:18px; --r-xl:26px;
+
+  /* display type — big confident numerals carry the hierarchy */
+  --fs-display:clamp(2.1rem,1.2rem + 3.4vw,3.6rem);
+  --fs-num:clamp(1.5rem,1rem + 1.8vw,2.4rem);
+
+  /* motion */
+  --ease-spring:cubic-bezier(.22,1.4,.36,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --dur-fast:140ms; --dur:260ms;
+
+  /* per-sprint accent, set inline from SprintDef.accent */
+  --sprint:var(--hld);
 }
 
 html[data-theme="dark"]{
@@ -42,7 +57,7 @@ html[data-theme="dark"]{
   --fire:#ff6b35;
   --idle:#5d5d74;
   --track:#1c1c28;
-  --glow:.55;
+  --glow:.34;
 }
 
 html[data-theme="light"]{
@@ -66,6 +81,6 @@ html[data-theme="light"]{
   --fire:#e2551d;
   --idle:#8b90a6;
   --track:#e4e7f1;
-  --glow:.20;
+  --glow:.14;
 }
 

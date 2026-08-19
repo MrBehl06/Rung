@@ -49,12 +49,19 @@ export interface ReviewBuckets {
   upcoming: Topic[];
 }
 
-export function reviewBuckets(state: TrackerState, today = todayISO()): ReviewBuckets {
-  const flagged = state.topics
+export function reviewBuckets(
+  state: TrackerState,
+  today = todayISO(),
+  /** scoped pool — pass activeTopics(state) to pause left sprints' reviews */
+  pool?: Topic[],
+): ReviewBuckets {
+  const topics = pool ?? state.topics;
+
+  const flagged = topics
     .filter((t) => t.status === 'Needs Revision')
     .sort((a, b) => String(a.dateCompleted ?? '').localeCompare(String(b.dateCompleted ?? '')));
 
-  const completed = state.topics.filter((t) => t.status === 'Completed');
+  const completed = topics.filter((t) => t.status === 'Completed');
 
   const due = completed
     .filter((t) => isDue(t, today))

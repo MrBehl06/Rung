@@ -8,6 +8,7 @@ import type {
 } from '../types';
 import { DIFFS } from '../types';
 import { SPRINTS, categoriesOf, categoryRank } from '../data/sprints';
+import { activeTopics } from './scope';
 import { pct, todayISO } from './utils';
 
 /** Every number on the dashboard comes from here — nothing is ever stored. */
@@ -114,7 +115,7 @@ export function suggestNext(state: TrackerState, n = 5): Topic[] {
     w += (t.order || 0) * 0.05;
     return w;
   };
-  return state.topics
+  return activeTopics(state)
     .filter((t) => t.status !== 'Completed')
     .sort((a, b) => weight(a) - weight(b))
     .slice(0, n);

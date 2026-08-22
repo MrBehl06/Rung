@@ -39,20 +39,20 @@ Joining or leaving scopes **attention, never data**:
 
 | | Scoped to joined sprints |
 |---|---|
-| Sidebar rows, Quests, Review queue, Dashboard mission | Yes |
+| Sidebar rows, Review queue, Base pick-up list | Yes |
 | Search and ⌘K | No — you can always reach anything |
-| **XP, levels, awards, streak, calendar history** | **No — lifetime, all sprints** |
+| **XP, levels, calendar history** | **No — lifetime, all sprints** |
 
 So leaving a sprint quiets it without ever costing you a level or re-locking a badge. Nothing
 is deleted, and rejoining restores it instantly. Completing a topic in a sprint you have left
-still earns XP and extends your streak — leaving changes what the app *suggests*, not what you
+still earns XP — leaving changes what the app *suggests*, not what you
 are allowed to do.
 
 ## Calendar
 
 A month grid built entirely from data the tracker already has:
 
-- **Past days** shade by completions logged that day, with the current streak run outlined.
+- **Past days** shade by how much you logged that day.
 - **Future days** show `◷n` review pips, read from the spaced-repetition schedule — including
   for topics completed before the SRS feature existed.
 - **Selecting a day** lists what you completed, revised, and what falls due, each opening the
@@ -64,16 +64,23 @@ what can be named, the panel says `+N more` rather than misreporting it.
 
 ## Interface
 
-- **Sidebar** carries the persistent level/XP/streak HUD, so progression is visible on every
-  view, plus one row per joined sprint. Collapses to a 64px icon rail (`B`), and the state
-  persists.
-- **Mobile** swaps it for a bottom tab bar over Base, Sprints, Quests, Review and Calendar,
-  plus a drawer holding the HUD, secondary views and actions.
-- **Topic drawer** — click any topic name for notes (autosaving), review schedule, status,
-  and history. Notes are searchable from the list and from ⌘K.
-- **Bulk edit** — select rows with `X` or the checkbox, then complete / start / revise /
-  reset / move / delete in one go.
-- **Undo** — every destructive action offers Undo in its toast, or `⌘Z`.
+Five destinations:
+
+| | |
+|---|---|
+| **Base** | your level, and the handful of topics to pick up next |
+| **Calendar** | month grid plus a writable note for every day |
+| **Sprints** | a collapsible group; the joined sprints sit inside it |
+| **Review** | the spaced-repetition queue |
+| **Rewards** | coming soon — finish a sprint, plant a tree |
+
+- **Sidebar** carries the persistent level/XP HUD and collapses to a 64px icon rail (`B`).
+- **Mobile** swaps it for a bottom tab bar over the same five destinations. Export, import and
+  theme move to the foot of the Base page there, since there is no drawer.
+- **Top bar** holds only **New**. `⌘K` still opens the command palette, which is how you search.
+- **Topic drawer** — click any topic name for notes (autosaving), review schedule, status, history.
+- **Bulk edit**, **Undo** — unchanged.
+
 
 ## Data
 
@@ -89,7 +96,7 @@ what can be named, the panel says `+N more` rather than misreporting it.
 
 ## Game mechanics
 
-Every mechanic is **derived from your existing progress**, never stored — so the numbers can
+XP comes from **completions and revisions only**. Every mechanic is derived from your existing progress, never stored — so the numbers can
 never drift from reality, and an old backup gains a level and badges the moment you import it.
 
 | Action | XP |
@@ -98,18 +105,12 @@ never drift from reality, and an old backup gains a level and badges the moment 
 | Complete a Medium topic | +25 |
 | Complete a Hard topic | +50 |
 | Log a revision | +15 |
-| Clear the whole quest board | +40 |
 
 - **Levels** — level *L* requires `20 · (L−1) · L` cumulative XP. Clearing the full catalogue
   lands around level 13.
 - **Ranks** — Initiate → Novice → Practitioner → Journeyman → Senior → Architect → Distinguished.
-- **Awards** — 19 achievements across bronze/silver/gold/legendary. Locked ones show live
-  progress; each unlock is celebrated once (tracked in `seenAchievements`).
 - **Skill paths** — each track unlocks at 40% of the previous one. The lock is a suggested
   route, not a wall — you can still click through.
-- **Activity heatmap** — 20 weeks of contributions rendered from the `history` map, plus
-  current and longest streak.
-- **Quests** — Today's Focus, capped at 5/day, with per-quest XP and a board-clear bonus.
 
 ## Spaced repetition
 
@@ -181,9 +182,8 @@ Add, delete, complete or reset anything and every number on the dashboard recomp
 | Key | Action |
 |---|---|
 | `⌘K` / `Ctrl K` | command bar |
-| `/` | focus search |
 | `N` | new topic |
-| `1`–`7` | switch views (Base, Sprints, Quests, Review, Calendar, Awards, Guide) |
+| `1`–`5` | switch views (Base, Calendar, Sprints, Review, Rewards) |
 | `[` / `]` | cycle between joined sprints |
 | `←` / `→` / `T` | calendar: previous month / next month / today |
 | `B` | collapse / expand the sidebar |
@@ -221,9 +221,9 @@ what should I study next
 ```js
 tracker.run('completed Parking Lot')  // plain-English command → { ok, msg, topic }
 tracker.level()                       // { level, rank, xp, into, span, toNext }
-tracker.awards()                      // 19 achievements with live progress
-tracker.streak()                      // current streak in days
 tracker.sprints()                     // { registered, joined }
+tracker.notes()                       // every day note
+tracker.note('2026-08-22', '- do the thing')
 tracker.join('lld') | tracker.leave('lld')
 tracker.calendar(2026, 7)             // month grid cells (month is 0-indexed)
 tracker.stats()                       // { all, hld, lld, patterns, problems, byCat, byDiff, … }
@@ -236,7 +236,6 @@ tracker.move('Singleton', 'Behavioral Patterns')
 tracker.reviews()                     // { due, flagged, upcoming }
 tracker.review('CAP Theorem','good')  // 'good' walks the ladder, 'hard' resets it
 tracker.undo()                        // reverse the last destructive action
-tracker.today.add('Kafka') | tracker.today.carry()
 tracker.export() | tracker.wipe()
 ```
 
@@ -257,20 +256,20 @@ src/
 │   ├── storage.ts      localStorage driver with in-memory fallback
 │   ├── model.ts        makeTopic, blankState, non-destructive seed merge
 │   ├── store.ts        external store (useSyncExternalStore) + all mutations
-│   ├── stats.ts        derived progress, streak, "study next" ranking
-│   ├── game.ts         XP, levels, ranks, achievements, heatmap, skill tree
+│   ├── stats.ts        derived progress, "study next" ranking
+│   ├── game.ts         XP, levels, ranks, skill tree
 │   ├── commands.ts     plain-English command engine + fuzzy topic matching
 │   ├── toasts.ts       toast store
 │   └── utils.ts        date / string / percentage helpers
 │   ├── srs.ts          spaced-repetition ladder, due dates, review buckets
 │   ├── scope.ts        activeTopics — the single definition of "joined"
+│   ├── daynotes.ts     day-note parsing + tick remapping
 │   ├── calendar.ts     month grid, day detail, consistency
 │   └── dialog.ts       themed promise-based confirm()
 ├── hooks/useFocusTrap.ts  keyboard trap + focus restore for overlays
-├── components/         Sidebar, Icons, hud, SprintCard, TopicRow, TopicDrawer,
-│                       TopicModal, Palette, ConfirmDialog
-└── views/              Dashboard, Sprints, TopicsView, Today, Revision,
-                        Calendar, Awards, Guide
+├── components/         Sidebar, NavGroup, Icons, hud, SprintCard, DayNote,
+│                       TopicRow, TopicDrawer, TopicModal, Palette, ConfirmDialog
+└── views/              Dashboard, Calendar, Sprints, TopicsView, Revision, Rewards
 ```
 
 To add topics permanently, edit the relevant file in `src/data/sprints/` and redeploy —

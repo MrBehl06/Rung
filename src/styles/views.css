@@ -2,80 +2,17 @@
 /* ============================================================
    HERO HUD
    ============================================================ */
-.hud{
-  position:relative;overflow:hidden;padding:22px 24px;margin-bottom:14px;
-  background:
-    radial-gradient(700px 220px at 12% 0%,color-mix(in srgb,var(--xp) 13%,transparent),transparent 70%),
-    linear-gradient(180deg,var(--panel-2),var(--panel));
-  border:1px solid var(--line-2);
-  clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px);
-}
+
 .hud::after{ /* scanline texture */
   content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
   background:repeating-linear-gradient(180deg,transparent 0 3px,rgba(0,0,0,.05) 3px 4px);
 }
-.hud-top{display:flex;align-items:flex-start;gap:22px;flex-wrap:wrap;position:relative;z-index:1}
 
-.hud-badge{
-  position:relative;width:92px;height:92px;flex:none;display:grid;place-items:center;
-  background:linear-gradient(140deg,var(--xp),var(--xp-2));
-  clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
-  box-shadow:0 0 34px color-mix(in srgb,var(--xp) calc(var(--glow) * 70%),transparent);
-}
-.hud-badge span{font-size:9px;font-weight:800;letter-spacing:1.4px;color:#07070c;opacity:.72;text-transform:uppercase}
-.hud-badge b{font-family:var(--mono);font-size:34px;font-weight:800;color:#07070c;line-height:.9;letter-spacing:-2px}
-.hud-lv{flex:1;min-width:260px}
-.hud-rank{
-  font-size:var(--fs-display);font-weight:780;letter-spacing:-.6px;line-height:1.1;
-  background:linear-gradient(92deg,var(--tx),var(--xp));-webkit-background-clip:text;background-clip:text;color:transparent;
-}
-.hud-sub{font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3);margin-top:3px;letter-spacing:.4px}
-
-.xpbar{
-  position:relative;height:16px;margin-top:13px;background:var(--track);
-  border:1px solid var(--line-2);overflow:hidden;
-  border-radius:var(--r-sm);
-}
-.xpbar i{
-  display:block;height:100%;background:linear-gradient(90deg,var(--xp-2),var(--xp));
-  box-shadow:0 0 16px color-mix(in srgb,var(--xp) calc(var(--glow) * 90%),transparent);
-  transition:width .6s cubic-bezier(.22,1,.36,1);position:relative;
-}
-.xpbar i::after{
-  content:'';position:absolute;inset:0;
-  background:repeating-linear-gradient(115deg,transparent 0 9px,rgba(255,255,255,.16) 9px 18px);
-  animation:slide 9s linear infinite;
-}
 @keyframes slide{to{background-position:180px 0}}
-.xpbar em{
-  position:absolute;inset:0;display:grid;place-items:center;font-style:normal;
-  font-family:var(--mono);font-size:10px;font-weight:750;letter-spacing:.6px;
-  color:var(--tx);text-shadow:0 1px 3px rgba(0,0,0,.65);
-}
 
 /* right-hand vitals inside the HUD */
-.hud-vitals{display:flex;gap:10px;flex-wrap:wrap}
-.vital{
-  min-width:96px;padding:10px 13px;background:color-mix(in srgb,var(--panel-3) 82%,transparent);
-  border:1px solid var(--line);
-  border-radius:var(--r-md);
-}
-.vital .k{font-size:9px;text-transform:uppercase;letter-spacing:1.1px;color:var(--tx-3);font-weight:700;display:block}
-.vital .v{font-family:var(--mono);font-size:23px;font-weight:800;line-height:1.15;display:block;margin-top:3px}
-.vital .m{font-size:9.5px;color:var(--tx-3);font-family:var(--mono)}
-.vital.fire .v{color:var(--fire)} .vital.hld .v{color:var(--hld)}
-.vital.lld .v{color:var(--lld)} .vital.ok .v{color:var(--ok)} .vital.xp .v{color:var(--xp)}
 
 /* ---------- heatmap ---------- */
-.heat{display:flex;gap:3px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
-.heat-col{display:flex;flex-direction:column;gap:3px}
-.heat-c{width:11px;height:11px;background:var(--track);border-radius:2px;flex:none}
-.heat-c[data-l="1"]{background:color-mix(in srgb,var(--ok) 32%,var(--track))}
-.heat-c[data-l="2"]{background:color-mix(in srgb,var(--ok) 55%,var(--track))}
-.heat-c[data-l="3"]{background:color-mix(in srgb,var(--ok) 78%,var(--track))}
-.heat-c[data-l="4"]{background:var(--ok);box-shadow:0 0 7px color-mix(in srgb,var(--ok) calc(var(--glow) * 85%),transparent)}
-.heat-c[data-today="1"]{outline:1.5px solid var(--xp);outline-offset:1px}
-.heat-legend{display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--tx-3);font-family:var(--mono);margin-top:9px}
 
 /* ---------- skill tree ---------- */
 .tree{display:flex;flex-direction:column;gap:0}
@@ -101,69 +38,17 @@
 .node-pct{font-family:var(--mono);font-size:var(--fs-sm);font-weight:700;color:var(--tx-2);min-width:52px;text-align:right}
 
 /* ---------- achievements ---------- */
-.ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
-.ach{
-  padding:14px;text-align:center;position:relative;overflow:hidden;
-  background:var(--panel);border:1px solid var(--line);
-  border-radius:var(--r-md);
-  transition:transform .14s;
-}
-.ach:hover{transform:translateY(-2px)}
-.ach.locked{opacity:.5}
-.ach.locked .ach-ico{filter:grayscale(1)}
-.ach.got{border-color:color-mix(in srgb,var(--tc) 55%,transparent);background:linear-gradient(170deg,color-mix(in srgb,var(--tc) 11%,var(--panel)),var(--panel))}
-.ach.got::before{
-  content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(120px 60px at 50% 0%,color-mix(in srgb,var(--tc) 22%,transparent),transparent 70%);
-}
-.ach-ico{font-size:29px;line-height:1;display:block;margin-bottom:8px;position:relative}
-.ach-n{font-size:12px;font-weight:700;letter-spacing:-.1px}
-.ach-d{font-size:10px;color:var(--tx-3);margin-top:3px;line-height:1.4;min-height:26px}
-.ach-tier{
-  position:absolute;top:8px;right:9px;font-size:8px;font-family:var(--mono);font-weight:750;
-  text-transform:uppercase;letter-spacing:.7px;color:var(--tc);
-}
-.ach-prog{margin-top:9px}
-.ach-prog .meter{height:4px}
-.ach-prog .pn{font-size:9.5px;font-family:var(--mono);color:var(--tx-3);margin-top:5px;display:block}
 
 /* unlock celebration — a real panel, so it stays legible over any content */
-.unlock{
-  position:fixed;left:50%;top:88px;transform:translateX(-50%);z-index:95;pointer-events:none;
-  display:flex;align-items:center;gap:15px;padding:15px 24px 15px 19px;
-  width:max-content;max-width:calc(100vw - 28px);
-  background:linear-gradient(120deg,color-mix(in srgb,var(--tc,var(--xp)) 22%,var(--panel)),var(--panel) 62%);
-  border:1px solid color-mix(in srgb,var(--tc,var(--xp)) 65%,transparent);
-  clip-path:polygon(13px 0,100% 0,100% calc(100% - 13px),calc(100% - 13px) 100%,0 100%,0 13px);
-  box-shadow:0 14px 44px rgba(0,0,0,.6),0 0 44px color-mix(in srgb,var(--tc,var(--xp)) 30%,transparent);
-  animation:unlockIn .5s cubic-bezier(.2,1.3,.4,1);
-}
-.unlock .u-ico{
-  font-size:40px;line-height:1;flex:none;
-  filter:drop-shadow(0 0 16px color-mix(in srgb,var(--tc,var(--xp)) 85%,transparent));
-  animation:pop2 .6s cubic-bezier(.2,1.5,.4,1);
-}
-.unlock .u-txt{display:flex;flex-direction:column;gap:3px;min-width:0}
-.unlock .u-lb{font-size:9px;letter-spacing:2.2px;text-transform:uppercase;color:var(--tc,var(--xp));font-weight:800;font-family:var(--mono)}
-.unlock .u-n{font-size:20px;font-weight:800;letter-spacing:-.4px;line-height:1.15}
-.unlock .u-d{font-size:11px;color:var(--tx-2)}
+
 @media (max-width:560px){
-  .unlock{top:74px;padding:12px 18px 12px 15px;gap:12px}
-  .unlock .u-ico{font-size:32px}
-  .unlock .u-n{font-size:17px}
-  .unlock .u-d{display:none}
+
 }
 @keyframes unlockIn{from{opacity:0;transform:translateX(-50%) translateY(14px) scale(.94)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
 @keyframes pop2{0%{transform:scale(.3) rotate(-16deg)}62%{transform:scale(1.22) rotate(6deg)}100%{transform:scale(1) rotate(0)}}
 
 /* ---------- quests ---------- */
-.quest{
-  display:grid;grid-template-columns:32px 1fr auto;gap:13px;align-items:center;
-  padding:13px 15px;border-bottom:1px solid var(--line);position:relative;
-}
-.quest:last-child{border-bottom:0}
-.quest[data-done="1"] .q-t{text-decoration:line-through;color:var(--tx-3)}
-.quest[data-done="1"]{background:color-mix(in srgb,var(--ok) 6%,transparent)}
+
 .q-t{font-size:var(--fs-sm);font-weight:650}
 .q-m{font-size:10px;color:var(--tx-3);font-family:var(--mono);margin-top:3px}
 .q-xp{
@@ -301,7 +186,6 @@
 .rc-due.now{color:var(--warn)}
 .rc-acts{display:flex;gap:6px;flex-wrap:wrap}
 
-
 /* ============================================================
    SPRINTS HUB
    ============================================================ */
@@ -410,7 +294,7 @@
 @media (prefers-reduced-motion: no-preference){
   @keyframes pop{0%{transform:scale(1)}42%{transform:scale(1.13)}100%{transform:scale(1)}}
   @keyframes flame{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2px) scale(1.08)}}
-  .vital.fire .v{display:inline-block;animation:flame 2.6s var(--ease-out) infinite}
+
   .sprint-num b{transition:color var(--dur) var(--ease-out)}
 }
 @media (prefers-reduced-motion: reduce){
@@ -515,4 +399,10 @@
 .cal-dot{
   position:absolute;right:5px;top:5px;width:5px;height:5px;border-radius:50%;
   background:var(--xp);
+}
+
+/* ---------- view transitions ---------- */
+@media (prefers-reduced-motion: no-preference){
+  @keyframes viewIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  main > .view{animation:viewIn var(--dur) var(--ease-out)}
 }

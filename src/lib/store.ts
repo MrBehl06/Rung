@@ -12,7 +12,7 @@ import { KEY, PERSISTENT, Storage } from './storage';
 import { blankState, loadState, makeTopic } from './model';
 import { SR_STEPS, addDays, stepDays } from './srs';
 import { remapChecked, toggleLine } from './daynotes';
-import { nowISO, todayISO } from './utils';
+import { domainOf, nowISO, safeUrl, todayISO, uid } from './utils';
 import { toast, toastUndo } from './toasts';
 import { confirmDialog } from './dialog';
 
@@ -352,6 +352,40 @@ class TrackerStore {
       result = t;
     });
     return result;
+  }
+
+  // ---------- topic links ----------
+  /**
+   * Attach a resource to a topic. The URL is validated to http(s) first —
+   * a `javascript:` URL rendered into an href would execute.
+   * Returns false when the input was not a usable URL.
+   */
+  addLink(topicId: string, rawUrl: string, label = ''): boolean {
+    const url = safeUrl(rawUrl);
+    if (!url) {
+      toast('That does not look like a web address', 'warn');
+      return false;
+    }
+    if (this.find(topicId)?.links.some((l) => l.url === url)) {
+      toast('Already saved on this topic', 'warn');
+      return false;
+    }
+    this.produce((d) => {
+      const t = d.topics.find((x) => x.id === topicId);
+      if (!t) return;
+      t.links = [...t.links, { id: uid(), url, label: label.trim() || domainOf(url) }];
+      t.updatedAt = nowISO();
+    });
+    return true;
+  }
+
+  removeLink(topicId: string, linkId: string): void {
+    this.produce((d) => {
+      const t = d.topics.find((x) => x.id === topicId);
+      if (!t) return;
+      t.links = t.links.filter((l) => l.id !== linkId);
+      t.updatedAt = nowISO();
+    });
   }
 
   // ---------- day notes ----------

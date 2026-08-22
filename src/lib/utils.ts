@@ -29,3 +29,32 @@ export const daysAgo = (iso: string | null | undefined): number | null => {
   if (isNaN(d.getTime())) return null;
   return Math.floor((Date.now() - d.getTime()) / 864e5);
 };
+
+/**
+ * Accept a pasted URL only if it is http(s).
+ *
+ * `javascript:` and `data:` URLs are executable when placed in an href, so an
+ * unvalidated link would be a real XSS hole in a page that renders them.
+ * Returns null when the input cannot be trusted.
+ */
+export function safeUrl(input: string): string | null {
+  const raw = String(input ?? '').trim();
+  if (!raw) return null;
+  // bare domains are common when pasting, so assume https rather than rejecting
+  const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`;
+  try {
+    const u = new URL(withScheme);
+    return u.protocol === 'http:' || u.protocol === 'https:' ? u.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/** hostname without the www, for labelling a link the user did not name */
+export function domainOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}

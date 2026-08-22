@@ -9,7 +9,7 @@ import { confirmDialog } from '../lib/dialog';
 import { norm, slug } from '../lib/utils';
 import { Icon } from '../components/Icons';
 import { Empty } from '../components/hud';
-import { TopicRow } from '../components/TopicRow';
+import { TopicCard } from '../components/TopicCard';
 
 const DIFF_RANK: Record<Difficulty, number> = { Easy: 0, Medium: 1, Hard: 2 };
 
@@ -318,9 +318,9 @@ export function TopicsView({
                     <span className="cnt">{cs.done}/{cs.total}</span>
                   </button>
                   {open ? (
-                    <div className="tlist">
+                    <div className="tgrid">
                       {items.map((t) => (
-                        <TopicRow key={t.id} {...rowProps(t, ordered.indexOf(t))} />
+                        <TopicCard key={t.id} {...rowProps(t, ordered.indexOf(t))} />
                       ))}
                     </div>
                   ) : null}
@@ -329,9 +329,9 @@ export function TopicsView({
             })
           ) : (
             <div className="panel">
-              <div className="tlist">
+              <div className="tgrid">
                 {flat.map((t, i) => (
-                  <TopicRow key={t.id} {...rowProps(t, i)} />
+                  <TopicCard key={t.id} {...rowProps(t, i)} showCategory />
                 ))}
               </div>
             </div>

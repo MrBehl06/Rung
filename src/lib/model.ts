@@ -1,4 +1,4 @@
-import type { DayNote, Difficulty, Status, Topic, TrackerState } from '../types';
+import type { DayNote, Difficulty, Status, Topic, TopicLink, TrackerState } from '../types';
 import { DIFFS, STATUSES, VIEWS } from '../types';
 import { SPRINTS, getSprint, resolveSprint, seedRows } from '../data/sprints';
 import { KEY, SCHEMA, Storage } from './storage';
@@ -44,6 +44,7 @@ export function makeTopic(o: Partial<Topic> & { name?: string; type?: string }):
     status,
     difficulty,
     notes: o.notes || '',
+    links: Array.isArray(o.links) ? (o.links as TopicLink[]) : [],
     dateStarted: o.dateStarted ?? (status !== 'Not Started' ? todayISO() : null),
     dateCompleted:
       o.dateCompleted ?? (status === 'Completed' || status === 'Needs Revision' ? todayISO() : null),

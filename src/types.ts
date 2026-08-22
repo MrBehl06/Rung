@@ -17,6 +17,14 @@ export const VIEWS: ViewId[] = [
   'dashboard', 'calendar', 'sprints', 'revision', 'rewards',
 ];
 
+export interface TopicLink {
+  id: string;
+  /** always http(s) — validated on the way in */
+  url: string;
+  /** optional; falls back to the URL's domain when shown */
+  label: string;
+}
+
 export interface Topic {
   id: string;
   /** stable seed id — present only on catalogue rows, null on user-created topics */
@@ -28,6 +36,8 @@ export interface Topic {
   status: Status;
   difficulty: Difficulty;
   notes: string;
+  /** blogs, videos and docs the user attached to this topic */
+  links: TopicLink[];
   dateStarted: string | null;
   dateCompleted: string | null;
   lastRevisedAt?: string | null;

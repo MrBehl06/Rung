@@ -7,7 +7,7 @@ import { confirmDialog } from '../lib/dialog';
 import { toast } from '../lib/toasts';
 import { xpFor } from '../lib/game';
 import { SR_STEPS, daysUntilDue, dueLabel, stepDays } from '../lib/srs';
-import { fmtDate } from '../lib/utils';
+import { domainOf, fmtDate } from '../lib/utils';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { Icon } from './Icons';
 import { Badge, TypeTag } from './primitives';
@@ -24,11 +24,15 @@ export function TopicDrawer({ topic: t, onClose, onEdit }: Props) {
   useFocusTrap(ref, onClose);
 
   const [notes, setNotes] = useState(t.notes);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkLabel, setLinkLabel] = useState('');
   const [dirty, setDirty] = useState(false);
 
   // reset the editor when a different topic is opened in the same drawer
   useEffect(() => {
     setNotes(t.notes);
+    setLinkUrl('');
+    setLinkLabel('');
     setDirty(false);
   }, [t.id, t.notes]);
 
@@ -153,6 +157,63 @@ export function TopicDrawer({ topic: t, onClose, onEdit }: Props) {
               }}
             />
             <p className="hint">Autosaves. Notes are searchable from the topic list and ⌘K.</p>
+          </div>
+
+          {/* resources — blogs, videos and docs for this topic */}
+          <div className="dr-block">
+            <span className="fld-label">Resources</span>
+            <form
+              className="res-add"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (store.addLink(t.id, linkUrl, linkLabel)) {
+                  setLinkUrl('');
+                  setLinkLabel('');
+                }
+              }}
+            >
+              <input
+                type="text"
+                value={linkUrl}
+                placeholder="Paste a link…"
+                aria-label="Resource URL"
+                onChange={(e) => setLinkUrl(e.target.value)}
+              />
+              <input
+                type="text"
+                className="res-label"
+                value={linkLabel}
+                placeholder="Name (optional)"
+                aria-label="Resource name"
+                onChange={(e) => setLinkLabel(e.target.value)}
+              />
+              <button className="btn xs" type="submit" disabled={!linkUrl.trim()}>
+                Add
+              </button>
+            </form>
+
+            {t.links.length ? (
+              <ul className="res-list">
+                {t.links.map((l) => (
+                  <li key={l.id}>
+                    <a href={l.url} target="_blank" rel="noopener noreferrer">
+                      <Icon name="link" size={12} />
+                      <span className="res-n">{l.label}</span>
+                      <span className="res-host">{domainOf(l.url)}</span>
+                    </a>
+                    <button
+                      className="btn xs ghost"
+                      aria-label={`Remove ${l.label}`}
+                      onClick={() => store.removeLink(t.id, l.id)}
+                    >
+                      <Icon name="x" size={11} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="hint">Nothing saved yet. Paste a blog, video or doc you want to come back to.</p>
+            )}
           </div>
 
           {/* stats */}

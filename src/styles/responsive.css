@@ -40,6 +40,11 @@
 }
 @media (max-width:560px){
   .stat-v{font-size:25px}
+  /* two cards across on a phone — one per row makes 54 topics an endless scroll */
+  .tgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:9px}
+  .tcard{min-height:92px;padding:10px}
+  .tcard-name{font-size:var(--fs-xs);-webkit-line-clamp:3}
+
   /* on a phone the trailing metadata is the first thing to go, not the layout */
   .titem .meta{display:none}
   .titem .acts{opacity:1}

@@ -11,6 +11,7 @@ import { SPRINTS, categoriesOf, getSprint, resolveSprint } from '../data/sprints
 import { KEY, PERSISTENT, Storage } from './storage';
 import { blankState, loadState, makeTopic } from './model';
 import { SR_STEPS, addDays, stepDays } from './srs';
+import { remapChecked, toggleLine } from './daynotes';
 import { nowISO, todayISO } from './utils';
 import { toast, toastUndo } from './toasts';
 import { confirmDialog } from './dialog';
@@ -351,6 +352,33 @@ class TrackerStore {
       result = t;
     });
     return result;
+  }
+
+  // ---------- day notes ----------
+  /**
+   * Write a day's note. Ticks are remapped against the new text so they stay
+   * attached to their lines; an empty note is deleted rather than stored blank.
+   */
+  setDayNote(date: string, text: string): void {
+    this.produce((d) => {
+      const prev = d.dayNotes[date];
+      if (!text.trim()) {
+        delete d.dayNotes[date];
+        return;
+      }
+      d.dayNotes[date] = {
+        text,
+        checked: prev ? remapChecked(prev.text, text, prev.checked) : [],
+      };
+    }, 'soon');
+  }
+
+  toggleDayLine(date: string, index: number): void {
+    this.produce((d) => {
+      const note = d.dayNotes[date];
+      if (!note) return;
+      d.dayNotes[date] = { ...note, checked: toggleLine(note.checked, index) };
+    });
   }
 
   // ---------- ui ----------

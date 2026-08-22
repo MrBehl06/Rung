@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import type { TrackerState } from '../types';
 import { dayDetail, monthConsistency, monthGrid, monthLabel } from '../lib/calendar';
 import { todayISO } from '../lib/utils';
-import { SHead, Tile } from '../components/hud';
+import { SHead } from '../components/hud';
+import { DayNote } from '../components/DayNote';
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -59,24 +60,11 @@ export function Calendar({ state, onOpen }: { state: TrackerState; onOpen: (id: 
   return (
     <section className="view cal">
       <div className="bento">
-        <div className="c12">
-          <Tile
-            k="Consistency"
-            v={consistency == null ? '—' : `${consistency}%`}
-            m={consistency == null ? 'future month' : 'of days this month'}
-            cls="ok"
-            p={consistency ?? 0}
-            icon="▦"
-          />
-        </div>
-      </div>
-
-      <div className="bento">
         <div className="c7">
-        <div className="panel pad" style={{ height: '100%' }}>
+        <div className="panel pad">
         <SHead
           title={label}
-          sub="← → change month · T today"
+          sub={consistency == null ? undefined : `${consistency}% active`}
           right={
             <span className="cal-nav">
               <button className="btn xs ghost" aria-label="Previous month" onClick={() => shift(-1)}>
@@ -107,11 +95,12 @@ export function Calendar({ state, onOpen }: { state: TrackerState; onOpen: (id: 
               className={`cal-c ${c.inMonth ? '' : 'out'} ${picked === c.date ? 'sel' : ''}`}
               data-l={c.level}
               data-today={c.isToday ? 1 : 0}
-              aria-label={`${c.date}: ${c.completions} completed${c.dueReviews ? `, ${c.dueReviews} due` : ''}`}
+              aria-label={`${c.date}: ${c.completions} completed${c.dueReviews ? `, ${c.dueReviews} due` : ''}${c.hasNote ? ', has a note' : ''}`}
               onClick={() => setPicked(c.date)}
             >
               <span className="cal-n">{Number(c.date.slice(8))}</span>
               {c.isFuture && c.dueReviews ? <span className="cal-due">◷{c.dueReviews}</span> : null}
+              {c.hasNote ? <span className="cal-dot" aria-hidden="true" /> : null}
             </button>
           ))}
         </div>
@@ -125,8 +114,10 @@ export function Calendar({ state, onOpen }: { state: TrackerState; onOpen: (id: 
             title={detail.date}
             sub={`${detail.completed.length} completed · ${detail.revised.length} revised`}
           />
-          {!detail.completed.length && !detail.revised.length && !detail.due.length ? (
-            <p className="muted">Nothing logged or scheduled for this day.</p>
+          <DayNote date={detail.date} note={state.dayNotes[detail.date]} />
+
+          {detail.completed.length || detail.revised.length || detail.due.length ? (
+            <span className="dn-linked-lbl">linked</span>
           ) : null}
           <div className="cal-list">
             {detail.completed.map((t) => (

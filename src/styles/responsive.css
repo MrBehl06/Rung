@@ -6,6 +6,7 @@
   .c7,.c8{grid-column:span 12}
 }
 @media (max-width:900px){
+  .base-actions{display:flex}
   .c3,.c4,.c5,.c6,.c7,.c8{grid-column:span 12}
   .shell{--rail-w:0px}
   .side{display:none}

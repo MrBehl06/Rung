@@ -119,3 +119,20 @@ main{max-width:1500px;width:100%;margin:0 auto;padding:20px 20px 110px}
 .mdrawer{width:min(280px,84vw);height:100%;animation:slideL .2s cubic-bezier(.22,1,.36,1)}
 @keyframes slideL{from{transform:translateX(-24px);opacity:.5}to{transform:none;opacity:1}}
 .side.in-drawer{position:relative;width:100%;height:100%;border-right:1px solid var(--line-2)}
+
+/* ---------- sidebar nav group ---------- */
+.nav-group{display:flex;flex-direction:column}
+.nav-group-head{display:flex;align-items:center;gap:0;padding:0}
+.nav-group-main{
+  flex:1;min-width:0;display:flex;align-items:center;gap:10px;
+  background:none;border:0;font:inherit;color:inherit;cursor:pointer;
+  padding:9px 10px;text-align:left;
+}
+.nav-caret{
+  background:none;border:0;color:var(--tx-3);cursor:pointer;padding:9px 10px;
+  font-size:10px;line-height:1;
+}
+.nav-caret:hover{color:var(--tx)}
+.nav-children{display:flex;flex-direction:column;gap:2px;margin:2px 0 4px}
+.side-link.is-child{padding-left:30px;font-size:var(--fs-sm)}
+.side-link.is-child .si{font-size:12px}

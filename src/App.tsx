@@ -134,6 +134,8 @@ export default function App() {
       calendar: (year = new Date().getFullYear(), month = new Date().getMonth()) =>
         monthGrid(store.getSnapshot(), year, month),
       next: (n = 5) => suggestNext(store.getSnapshot(), n),
+      notes: () => store.getSnapshot().dayNotes,
+      note: (date: string, text: string) => store.setDayNote(date, text),
       topics: () => store.getSnapshot().topics,
       data: () => store.getSnapshot(),
       find: pick,

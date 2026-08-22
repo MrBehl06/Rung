@@ -108,22 +108,39 @@ label.fld > span,.fld-label{
 /* ---------- topic rows ---------- */
 .tlist{display:flex;flex-direction:column}
 .titem{
-  display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:12px;align-items:center;
-  padding:10px 15px;border-bottom:1px solid var(--line);transition:background .12s;
+  display:flex;align-items:center;gap:11px;
+  padding:0 14px;min-height:44px;
+  border-bottom:1px solid var(--line);
+  transition:background var(--dur-fast) var(--ease-out);
 }
 .titem:last-child{border-bottom:0}
 .titem:hover{background:var(--panel-2)}
-.titem[data-status="Completed"]{background:color-mix(in srgb,var(--ok) 4%,transparent)}
-.titem[data-status="Completed"] .txt{color:var(--tx-2)}
+.titem[data-status="Completed"] .txt{color:var(--tx-3);text-decoration:line-through;text-decoration-color:var(--line-2)}
 .titem[data-status="Needs Revision"]{box-shadow:inset 2px 0 0 var(--warn)}
-.titem[data-status="In Progress"]{box-shadow:inset 2px 0 0 var(--hld)}
-.titem .main{min-width:0}
-.titem .nm{font-size:var(--fs-sm);font-weight:650;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.titem .txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
-.titem .sub{font-size:10px;color:var(--tx-3);display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:4px;font-family:var(--mono)}
-.titem .acts{display:flex;gap:3px;align-items:center;opacity:.3;transition:opacity .12s}
+.titem[data-status="In Progress"]{box-shadow:inset 2px 0 0 var(--sprint,var(--hld))}
+
+/* name + status badge share one line and take the slack */
+.titem .main{
+  flex:1;min-width:0;display:flex;align-items:center;gap:8px;
+  font-size:var(--fs-sm);font-weight:600;
+}
+.titem .txt{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* badges keep their size; the name is what clips */
+.titem .main > .badge,.titem .main > .due-pill{flex:none}
+
+/* muted trailing metadata, hidden first when space runs out */
+.titem .meta{
+  display:flex;align-items:center;gap:10px;flex:none;
+  font-family:var(--mono);font-size:10px;color:var(--tx-3);white-space:nowrap;
+}
+
+.titem .acts{
+  display:flex;gap:3px;align-items:center;flex:none;
+  opacity:0;transition:opacity var(--dur-fast) var(--ease-out);
+}
 .titem:hover .acts,.titem:focus-within .acts{opacity:1}
 @media (hover:none){.titem .acts{opacity:1}}
+
 .xp-tag{color:var(--xp);font-weight:700}
 
 /* small chk variant inside topic rows */

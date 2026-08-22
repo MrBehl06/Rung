@@ -1,28 +1,30 @@
 import type { Topic } from '../types';
-import { getSprint } from '../data/sprints';
 import { store } from '../lib/store';
 import { confirmDialog } from '../lib/dialog';
-import { fmtDate } from '../lib/utils';
 import { xpFor } from '../lib/game';
 import { daysUntilDue, dueLabel } from '../lib/srs';
 import { Icon } from './Icons';
-import { Badge, TypeTag } from './primitives';
+import { Badge } from './primitives';
 
 interface Props {
   topic: Topic;
   onEdit: (id: string) => void;
   /** open the detail drawer */
   onOpen?: (id: string) => void;
-    selected?: boolean;
+  selected?: boolean;
   onSelect?: () => void;
+  /** something is selected, so show the select affordance on every row */
+  selecting?: boolean;
   /** j/k cursor is on this row */
   active?: boolean;
 }
 
-export function TopicRow({ topic: t, onEdit, onOpen, selected, onSelect, active }: Props) {
+export function TopicRow({ topic: t, onEdit, onOpen, selected, onSelect, selecting, active }: Props) {
   const done = t.status === 'Completed';
   const due = daysUntilDue(t);
   const overdue = due !== null && due <= 0 && done;
+  // "Not Started" is the default for most rows — showing it on every one is noise
+  const showBadge = t.status !== 'Not Started';
 
   return (
     <div
@@ -30,7 +32,7 @@ export function TopicRow({ topic: t, onEdit, onOpen, selected, onSelect, active 
       data-status={t.status}
       data-tid={t.id}
     >
-      {onSelect ? (
+      {onSelect && (selecting || selected) ? (
         <button
           className={`pick ${selected ? 'on' : ''}`}
           aria-label={selected ? `Deselect ${t.name}` : `Select ${t.name}`}
@@ -44,39 +46,35 @@ export function TopicRow({ topic: t, onEdit, onOpen, selected, onSelect, active 
       <button
         className="chk"
         data-on={done ? 1 : 0}
-        title={done ? 'Un-complete' : `Complete for +${xpFor(t)} XP`}
+        title={done ? 'Un-complete' : `Complete for +${xpFor(t)} XP · shift-click to select`}
         aria-label={`toggle complete for ${t.name}`}
-        onClick={() => store.toggleComplete(t.id)}
+        onClick={(e) => {
+          // shift-click selects instead of completing, so the row needs no second circle
+          if (e.shiftKey && onSelect) onSelect();
+          else store.toggleComplete(t.id);
+        }}
       >
         <Icon name="check" />
       </button>
 
       <div className="main">
-        <div className="nm">
-          {onOpen ? (
-            <button className="txt as-link" onClick={() => onOpen(t.id)} title="Open details">
-              {t.name}
-            </button>
-          ) : (
-            <span className="txt">{t.name}</span>
-          )}
-          <Badge status={t.status} />
-          {overdue ? <span className="due-pill">review due</span> : null}
-        </div>
-        <div className="sub">
-          <TypeTag type={getSprint(t.sprint)?.short ?? t.sprint} />
-          <span>{t.category}</span>
-          <span className={`d-${t.difficulty}`}>{t.difficulty}</span>
-          <span className="xp-tag">+{xpFor(t)} XP</span>
-          {t.revisionCount ? <span title="reviews logged">↻ {t.revisionCount}</span> : null}
-          {done && due !== null ? <span title="next review">🗓 {dueLabel(due)}</span> : null}
-          {!done && t.dateStarted ? <span title="started">▶ {fmtDate(t.dateStarted)}</span> : null}
-          {t.notes ? (
-            <span title="has notes">
-              <Icon name="note" size={11} style={{ verticalAlign: '-1px' }} />
-            </span>
-          ) : null}
-        </div>
+        {onOpen ? (
+          <button className="txt as-link" onClick={() => onOpen(t.id)} title="Open details">
+            {t.name}
+          </button>
+        ) : (
+          <span className="txt">{t.name}</span>
+        )}
+        {showBadge ? <Badge status={t.status} /> : null}
+        {overdue ? <span className="due-pill">due</span> : null}
+      </div>
+
+      <div className="meta">
+        {t.notes ? <Icon name="note" size={11} /> : null}
+        {t.revisionCount ? <span title="reviews logged">↻{t.revisionCount}</span> : null}
+        {done && due !== null ? <span title="next review">{dueLabel(due)}</span> : null}
+        <span className={`d-${t.difficulty}`}>{t.difficulty}</span>
+        <span className="xp-tag">+{xpFor(t)}</span>
       </div>
 
       <div className="acts">

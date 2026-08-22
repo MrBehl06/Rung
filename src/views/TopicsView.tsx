@@ -8,7 +8,7 @@ import { store } from '../lib/store';
 import { confirmDialog } from '../lib/dialog';
 import { norm, slug } from '../lib/utils';
 import { Icon } from '../components/Icons';
-import { Empty, Meter, SHead, SkillTree, Tile } from '../components/hud';
+import { Empty } from '../components/hud';
 import { TopicRow } from '../components/TopicRow';
 
 const DIFF_RANK: Record<Difficulty, number> = { Easy: 0, Medium: 1, Hard: 2 };
@@ -64,11 +64,11 @@ export function TopicsView({
   const sort = state.ui.sort ?? 'default';
   const q = norm(f.q);
   const def = getSprint(sprintId);
-  /** every accent on this view resolves through the --sprint custom property */
-  const accent = 'sprint';
 
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [cursor, setCursor] = useState(0);
+  /** difficulty + sort stay tucked away until asked for */
+  const [more, setMore] = useState(false);
 
   const list = useMemo(
     () =>
@@ -169,46 +169,55 @@ export function TopicsView({
     onEdit,
     selected: picked.has(t.id),
     onSelect: () => toggle(t.id),
+    selecting: picked.size > 0,
     active: ordered[cursor]?.id === t.id,
     index: i,
   });
 
   return (
     <section className="view" style={{ ['--sprint' as string]: def?.accent ?? 'var(--hld)' }}>
-      <div className="bento">
-        <div className="c3">
-          <Tile
-            k={`${def?.short ?? ''} mastery`}
-            v={`${s.pct}%`}
-            m={`${s.done}/${s.total} cleared`}
-            cls={accent}
-            p={s.pct}
-            icon={def?.icon}
-          />
-        </div>
-        <div className="c3">
-          <Tile k="XP earned" v={xpEarned} m={`of ${xpTotal} available`} cls="xp" p={(xpEarned / (xpTotal || 1)) * 100} icon="⚡" />
-        </div>
-        <div className="c3">
-          <Tile k="Active" v={s.prog} m="in progress" cls="hld" icon="▶" />
-        </div>
-        <div className="c3">
-          <Tile k="To revise" v={s.rev} m={s.rev ? 'in the review queue' : 'queue clear'} cls="warn" icon="↻" />
-        </div>
+      <header className="tv-head">
+        <h1 className="tv-title">
+          <span aria-hidden="true">{def?.icon}</span>
+          {def?.name ?? def?.short}
+        </h1>
+        <p className="tv-sub">
+          {s.done} of {s.total} cleared
+          {s.prog ? ` · ${s.prog} active` : ''}
+          {s.rev ? ` · ${s.rev} to revise` : ''}
+          {' · '}
+          {xpEarned} of {xpTotal} XP
+        </p>
+        <span className="tv-bar">
+          <i style={{ width: `${s.pct}%` }} />
+        </span>
+      </header>
+
+      {/* categories as a horizontal strip — the list keeps the full width */}
+      <div className="cat-strip" role="group" aria-label="Filter by track">
+        <button
+          className={`cat-chip ${f.category === 'all' ? 'on' : ''}`}
+          onClick={() => store.setFilters({ category: 'all' })}
+        >
+          All
+          <em>{s.total}</em>
+        </button>
+        {tree.map((n) => (
+          <button
+            key={n.cat}
+            className={`cat-chip ${f.category === n.cat ? 'on' : ''} ${n.mastered ? 'done' : ''}`}
+            onClick={() => store.setFilters({ category: f.category === n.cat ? 'all' : n.cat })}
+          >
+            {n.cat}
+            <em>
+              {n.done}/{n.total}
+            </em>
+          </button>
+        ))}
       </div>
 
       <div className="bento">
-        <div className="c4">
-          <div className="panel rail pad" style={{ height: '100%', ['--rail' as string]: `var(--${accent})` }}>
-            <SHead title={`${def?.short ?? ''} path`} />
-            <SkillTree
-              nodes={tree}
-              onPick={(cat) => store.setFilters({ category: f.category === cat ? 'all' : cat })}
-            />
-          </div>
-        </div>
-
-        <div className="c8">
+        <div className="c12">
           <div className="toolbar">
             <span className="search">
               <Icon name="search" />
@@ -224,13 +233,6 @@ export function TopicsView({
               />
             </span>
 
-            <select className="f" aria-label="Category filter" value={f.category} onChange={(e) => store.setFilters({ category: e.target.value })}>
-              <option value="all">All tracks</option>
-              {cats.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-
             <select className="f" aria-label="Status filter" value={f.status} onChange={(e) => store.setFilters({ status: e.target.value as Status | 'all' })}>
               <option value="all">Any status</option>
               {STATUSES.map((x) => (
@@ -238,18 +240,26 @@ export function TopicsView({
               ))}
             </select>
 
-            <select className="f" aria-label="Difficulty filter" value={f.difficulty} onChange={(e) => store.setFilters({ difficulty: e.target.value as Difficulty | 'all' })}>
-              <option value="all">Any difficulty</option>
-              {DIFFS.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
+            {more ? (
+              <>
+                <select className="f" aria-label="Difficulty filter" value={f.difficulty} onChange={(e) => store.setFilters({ difficulty: e.target.value as Difficulty | 'all' })}>
+                  <option value="all">Any difficulty</option>
+                  {DIFFS.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
 
-            <select className="f" aria-label="Sort" value={sort} onChange={(e) => store.setSort(e.target.value as SortKey)}>
-              {SORTS.map((x) => (
-                <option key={x.id} value={x.id}>{x.label}</option>
-              ))}
-            </select>
+                <select className="f" aria-label="Sort" value={sort} onChange={(e) => store.setSort(e.target.value as SortKey)}>
+                  {SORTS.map((x) => (
+                    <option key={x.id} value={x.id}>{x.label}</option>
+                  ))}
+                </select>
+              </>
+            ) : (
+              <button className="btn ghost xs" aria-expanded={false} onClick={() => setMore(true)}>
+                More
+              </button>
+            )}
 
             {filtersActive ? (
               <button className="btn ghost" onClick={() => store.clearFilters()}>
@@ -264,7 +274,7 @@ export function TopicsView({
               {list.length} shown · {scoped.length} in {def?.short}
             </span>
             <span className="count-note dim" style={{ marginLeft: 12 }}>
-              j/k move · enter open · x select
+              j/k move · enter open
             </span>
             <span className="spacer" />
             <button
@@ -305,7 +315,6 @@ export function TopicsView({
                       {cat}
                       {mastered ? <span className="mastered" aria-label="mastered">★</span> : null}
                     </h3>
-                    <span className="mini"><Meter p={cs.pct} cls={mastered ? 'ok' : accent} seg /></span>
                     <span className="cnt">{cs.done}/{cs.total}</span>
                   </button>
                   {open ? (

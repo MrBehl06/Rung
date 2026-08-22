@@ -40,8 +40,9 @@
 }
 @media (max-width:560px){
   .stat-v{font-size:25px}
-  .titem{grid-template-columns:auto 22px minmax(0,1fr);row-gap:7px}
-  .titem .acts{grid-column:1/-1;justify-content:flex-start}
+  /* on a phone the trailing metadata is the first thing to go, not the layout */
+  .titem .meta{display:none}
+  .titem .acts{opacity:1}
   .ring{width:124px;height:124px}
   .top-actions .lbl,.btn .lbl{display:none}
   .ach-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}

@@ -406,3 +406,48 @@
   @keyframes viewIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
   main > .view{animation:viewIn var(--dur) var(--ease-out)}
 }
+
+/* ============================================================
+   SPRINT TOPICS
+   ============================================================ */
+.tv-head{margin:0 0 20px}
+.tv-title{
+  display:flex;align-items:center;gap:10px;margin:0;
+  font-size:var(--fs-num);font-weight:800;letter-spacing:-.03em;line-height:1.1;
+}
+.tv-title > span{font-size:.7em}
+.tv-sub{
+  margin:7px 0 0;font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3);
+}
+.tv-bar{
+  display:block;height:3px;background:var(--track);border-radius:999px;
+  overflow:hidden;margin-top:13px;max-width:420px;
+}
+.tv-bar i{
+  display:block;height:100%;border-radius:999px;
+  background:var(--sprint,var(--hld));
+  transition:width var(--dur) var(--ease-out);
+}
+
+/* category chips replace the old vertical skill-tree panel */
+.cat-strip{
+  display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px;
+}
+.cat-chip{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+  background:var(--panel-2);border:1px solid var(--line);color:var(--tx-2);
+  font:inherit;font-size:var(--fs-sm);font-weight:600;white-space:nowrap;
+  transition:border-color var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out),
+             background var(--dur-fast) var(--ease-out);
+}
+.cat-chip em{
+  font-style:normal;font-family:var(--mono);font-size:10px;color:var(--tx-3);
+}
+.cat-chip:hover{border-color:var(--line-2);color:var(--tx)}
+.cat-chip.on{
+  background:color-mix(in srgb,var(--sprint,var(--hld)) 14%,transparent);
+  border-color:var(--sprint,var(--hld));color:var(--sprint,var(--hld));
+}
+.cat-chip.on em{color:inherit;opacity:.75}
+.cat-chip.done em{color:var(--ok)}

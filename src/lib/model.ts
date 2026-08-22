@@ -45,6 +45,7 @@ export function makeTopic(o: Partial<Topic> & { name?: string; type?: string }):
     difficulty,
     notes: o.notes || '',
     links: Array.isArray(o.links) ? (o.links as TopicLink[]) : [],
+    bookmarked: o.bookmarked === true,
     dateStarted: o.dateStarted ?? (status !== 'Not Started' ? todayISO() : null),
     dateCompleted:
       o.dateCompleted ?? (status === 'Completed' || status === 'Needs Revision' ? todayISO() : null),

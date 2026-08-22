@@ -1,5 +1,6 @@
 import type { Stats, TrackerState, ViewId } from '../types';
 import type { LevelInfo } from '../lib/game';
+import { completionStreak, weekProgress } from '../lib/streak';
 import { joinedSprintDefs } from '../lib/scope';
 import { NavGroup } from './NavGroup';
 import { store } from '../lib/store';
@@ -48,14 +49,24 @@ export function Sidebar({
   onImport,
 }: Props) {
   const view = state.ui.view;
+  const week = weekProgress(state);
+  const streak = completionStreak(state);
 
   return (
     <aside className={`side ${collapsed && !inDrawer ? 'is-collapsed' : ''} ${inDrawer ? 'in-drawer' : ''}`}>
       <div className="side-brand">
-        <span className="logo" aria-hidden="true">&lt;/&gt;</span>
+        <span className="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="19" height="19">
+            <g stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none">
+              {/* rails, slightly splayed so it reads as a ladder rather than an H */}
+              <path d="M6.5 3.5L5 20.5M17.5 3.5L19 20.5" />
+              <path d="M6.9 8.5h10.2M6.5 13.5h11M6.1 18.5h11.8" />
+            </g>
+          </svg>
+        </span>
         <span className="side-brand-txt">
-          <b>SYSTEM DESIGN</b>
-          <small>tracker</small>
+          <b>RUNG</b>
+          <small>interview prep</small>
         </span>
       </div>
 
@@ -73,6 +84,21 @@ export function Sidebar({
         <span className="side-xp">
           <i style={{ width: `${lv.pct}%` }} />
         </span>
+
+        <div className="side-week">
+          <span className="side-week-top">
+            <span>this week</span>
+            <b className={week.done ? 'done' : ''}>
+              {week.hit}/{week.target}
+            </b>
+          </span>
+          <span className="side-dots" aria-label={`${week.hit} of ${week.target} days this week`}>
+            {week.days.map((on, i) => (
+              <i key={i} className={on ? 'on' : ''} />
+            ))}
+          </span>
+          {streak > 1 ? <span className="side-streak">{streak} day streak</span> : null}
+        </div>
       </div>
 
       <nav className="side-nav" aria-label="Main">

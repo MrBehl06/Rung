@@ -57,6 +57,16 @@ export function TopicCard({
 
         <span className="spacer" />
 
+        <button
+          className={`tcard-star ${t.bookmarked ? 'on' : ''}`}
+          aria-label={t.bookmarked ? `Unstar ${t.name}` : `Star ${t.name}`}
+          aria-pressed={t.bookmarked}
+          title={t.bookmarked ? 'Remove from Saved' : 'Save for later'}
+          onClick={() => store.toggleBookmark(t.id)}
+        >
+          <Icon name={t.bookmarked ? 'star' : 'star-o'} size={13} />
+        </button>
+
         {t.links.length ? (
           <span className="tcard-links" title={`${t.links.length} saved resource${t.links.length > 1 ? 's' : ''}`}>
             <Icon name="link" size={11} />

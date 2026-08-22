@@ -38,6 +38,14 @@ export function IconSprite() {
             <path d="M2.6 2.2v3h3" />
           </g>
         </symbol>
+        <symbol id="i-star" viewBox="0 0 16 16">
+          <path d="M8 1.6l1.9 4 4.3.6-3.1 3 .8 4.3L8 11.5 4.1 13.5l.8-4.3-3.1-3 4.3-.6z"
+                fill="currentColor" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+        </symbol>
+        <symbol id="i-star-o" viewBox="0 0 16 16">
+          <path d="M8 1.6l1.9 4 4.3.6-3.1 3 .8 4.3L8 11.5 4.1 13.5l.8-4.3-3.1-3 4.3-.6z"
+                fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+        </symbol>
         <symbol id="i-link" viewBox="0 0 16 16">
           <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
             <path d="M6.6 9.4a3 3 0 004.3 0l2.2-2.2a3 3 0 00-4.3-4.3l-1 1" />

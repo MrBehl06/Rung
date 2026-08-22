@@ -2,8 +2,9 @@
  * localStorage with a safe in-memory fallback, so the app still runs inside
  * sandboxed previews (or Safari private mode) instead of crashing on boot.
  *
- * The key is unchanged from the v1 single-file build on purpose: anyone who
- * used the old page on this origin keeps their progress after the React port.
+ * The key is unchanged from the v1 single-file build on purpose, and stays
+ * unchanged through the rename to Rung: anyone who used an earlier version on
+ * this origin keeps their progress. Renaming it would orphan every save.
  */
 export const KEY = 'hld-lld-tracker/v1';
 export const SCHEMA = 3;

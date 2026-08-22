@@ -76,6 +76,7 @@ export function TopicsView({
     () =>
       state.topics.filter((t) => {
         if (f.sprint !== 'all' && t.sprint !== f.sprint) return false;
+        if (f.saved && !t.bookmarked) return false;
         if (f.category !== 'all' && t.category !== f.category) return false;
         if (f.status !== 'all' && t.status !== f.status) return false;
         if (f.difficulty !== 'all' && t.difficulty !== f.difficulty) return false;
@@ -83,7 +84,7 @@ export function TopicsView({
           return false;
         return true;
       }),
-    [state.topics, f.sprint, f.category, f.status, f.difficulty, q],
+    [state.topics, f.sprint, f.saved, f.category, f.status, f.difficulty, q],
   );
 
   const scoped = state.topics.filter((t) => t.sprint === sprintId);
@@ -92,6 +93,7 @@ export function TopicsView({
   const xpTotal = scoped.reduce((n, t) => n + xpFor(t), 0);
   const tree = skillTree(state, sprintId);
   const cats = allCategories(state, f.sprint);
+  const savedCount = scoped.filter((t) => t.bookmarked).length;
 
   // grouped when in catalogue order, flat when explicitly sorted
   const grouped = sort === 'default';
@@ -153,7 +155,7 @@ export function TopicsView({
   }, [cursor, ordered]);
 
   const filtersActive =
-    f.q !== '' || f.category !== 'all' || f.status !== 'all' || f.difficulty !== 'all';
+    f.q !== '' || f.category !== 'all' || f.status !== 'all' || f.difficulty !== 'all' || !!f.saved;
   const pickedIds = [...picked];
 
   function toggle(id: string) {
@@ -204,17 +206,28 @@ export function TopicsView({
       {/* categories as a horizontal strip — the list keeps the full width */}
       <div className="cat-strip" role="group" aria-label="Filter by track">
         <button
-          className={`cat-chip ${f.category === 'all' ? 'on' : ''}`}
-          onClick={() => store.setFilters({ category: 'all' })}
+          className={`cat-chip ${f.category === 'all' && !f.saved ? 'on' : ''}`}
+          onClick={() => store.setFilters({ category: 'all', saved: false })}
         >
           All
           <em>{s.total}</em>
         </button>
+        {savedCount ? (
+          <button
+            className={`cat-chip ${f.saved ? 'on' : ''}`}
+            onClick={() => store.setFilters({ saved: !f.saved, category: 'all' })}
+          >
+            ★ Saved
+            <em>{savedCount}</em>
+          </button>
+        ) : null}
         {tree.map((n) => (
           <button
             key={n.cat}
-            className={`cat-chip ${f.category === n.cat ? 'on' : ''} ${n.mastered ? 'done' : ''}`}
-            onClick={() => store.setFilters({ category: f.category === n.cat ? 'all' : n.cat })}
+            className={`cat-chip ${f.category === n.cat && !f.saved ? 'on' : ''} ${n.mastered ? 'done' : ''}`}
+            onClick={() =>
+              store.setFilters({ category: f.category === n.cat ? 'all' : n.cat, saved: false })
+            }
           >
             {n.cat}
             <em>

@@ -1,4 +1,6 @@
-# Interview Sprint Tracker
+# Rung
+
+*One rung at a time.*
 
 Track what you are actually preparing for. **HLD** and **LLD** ship as the first two
 *sprints*; more can be added as data files without touching a line of UI code.

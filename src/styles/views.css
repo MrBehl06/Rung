@@ -531,3 +531,15 @@
 .tv-titlerow{display:flex;align-items:flex-start;gap:16px}
 .tv-titlerow .tv-title{flex:1;min-width:0}
 .tv-titlerow .btn{flex:none;margin-top:4px}
+
+/* ---------- card star ---------- */
+.tcard-star{
+  background:none;border:0;padding:2px;cursor:pointer;line-height:0;
+  color:var(--tx-3);opacity:0;
+  transition:opacity var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out);
+}
+.tcard:hover .tcard-star,.tcard:focus-within .tcard-star{opacity:1}
+.tcard-star:hover{color:var(--tx)}
+/* a starred card keeps its star visible whether or not you are hovering */
+.tcard-star.on{opacity:1;color:var(--tx)}
+@media (hover:none){.tcard-star{opacity:1}}

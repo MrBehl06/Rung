@@ -354,6 +354,15 @@ class TrackerStore {
     return result;
   }
 
+  toggleBookmark(id: string): void {
+    this.produce((d) => {
+      const t = d.topics.find((x) => x.id === id);
+      if (!t) return;
+      t.bookmarked = !t.bookmarked;
+      t.updatedAt = nowISO();
+    });
+  }
+
   // ---------- topic links ----------
   /**
    * Attach a resource to a topic. The URL is validated to http(s) first —
@@ -484,6 +493,7 @@ class TrackerStore {
     this.setFilters({
       q: '',
       sprint: view === 'sprint' && activeSprint ? activeSprint : 'all',
+      saved: false,
       category: 'all',
       status: 'all',
       difficulty: 'all',
@@ -527,7 +537,7 @@ class TrackerStore {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `hld-lld-tracker-${todayISO()}.json`;
+    a.download = `rung-${todayISO()}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();

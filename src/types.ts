@@ -38,6 +38,8 @@ export interface Topic {
   notes: string;
   /** blogs, videos and docs the user attached to this topic */
   links: TopicLink[];
+  /** starred for quick recall */
+  bookmarked: boolean;
   dateStarted: string | null;
   dateCompleted: string | null;
   lastRevisedAt?: string | null;
@@ -55,6 +57,8 @@ export interface Filters {
   q: string;
   /** registered sprint id, or 'all' */
   sprint: string | 'all';
+  /** show only starred topics */
+  saved?: boolean;
   category: string;
   status: Status | 'all';
   difficulty: Difficulty | 'all';

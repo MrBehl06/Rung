@@ -1,12 +1,13 @@
 import type { SeedTopic, SprintDef } from './types';
 import { hld } from './hld';
 import { lld } from './lld';
+import { blind75 } from './blind75';
 
 export type { CategoryDef, SeedRow, SeedTopic, SprintDef, TeaserDef } from './types';
 export { TEASERS } from './teasers';
 
 /** Registration order is display order. Adding a sprint is one import + one entry. */
-export const SPRINTS: SprintDef[] = [hld, lld];
+export const SPRINTS: SprintDef[] = [hld, lld, blind75];
 
 export const SPRINT_IDS: string[] = SPRINTS.map((s) => s.id);
 

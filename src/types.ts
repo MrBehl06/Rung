@@ -8,15 +8,13 @@ export type ViewId =
   | 'dashboard'
   | 'sprints'
   | 'sprint'
-  | 'today'
   | 'revision'
   | 'calendar'
-  | 'awards'
-  | 'guide';
+  | 'rewards';
 
 /** digit-shortcut order; the 'sprint' view is reached by click, not by number */
 export const VIEWS: ViewId[] = [
-  'dashboard', 'sprints', 'today', 'revision', 'calendar', 'awards', 'guide',
+  'dashboard', 'calendar', 'sprints', 'revision', 'rewards',
 ];
 
 export interface Topic {
@@ -43,14 +41,6 @@ export interface Topic {
   updatedAt: string;
 }
 
-export interface TodayItem {
-  id: string;
-  topicId: string | null;
-  text: string;
-  done: boolean;
-  carried?: boolean;
-}
-
 export interface Filters {
   q: string;
   /** registered sprint id, or 'all' */
@@ -74,18 +64,24 @@ export interface UiState {
   activeSprint?: string | null;
 }
 
+export interface DayNote {
+  /** raw text as typed; a line starting with "- " renders as a checkbox */
+  text: string;
+  /** indices of checkable lines currently ticked */
+  checked: number[];
+}
+
 export interface TrackerState {
   schema: number;
   topics: Topic[];
-  today: { date: string; items: TodayItem[] };
   /** 'YYYY-MM-DD' -> completions that day */
   history: Record<string, number>;
   /** sids the user deleted: never re-seed them */
   removedSeeds: string[];
-  /** achievement ids already celebrated, so an unlock only fires once */
-  seenAchievements: string[];
   /** sprint ids the user has joined; scopes attention, never data */
   joinedSprints: string[];
+  /** 'YYYY-MM-DD' -> the note written for that day */
+  dayNotes: Record<string, DayNote>;
   ui: UiState;
   createdAt: string;
   updatedAt: string;

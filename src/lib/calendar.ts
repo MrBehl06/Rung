@@ -13,8 +13,8 @@ export interface DayCell {
   level: number;
   /** future: reviews scheduled to land that day */
   dueReviews: number;
-  /** part of the streak run ending today */
-  inStreak: boolean;
+  /** the user wrote something for this day */
+  hasNote: boolean;
 }
 
 export interface DayDetail {
@@ -31,19 +31,6 @@ function iso(year: number, month: number, day: number): string {
   return todayISO(new Date(year, month, day));
 }
 
-/** days in the current streak run, as a Set for O(1) cell lookup */
-function streakDays(state: TrackerState): Set<string> {
-  const active = new Set(Object.keys(state.history).filter((k) => state.history[k] > 0));
-  const out = new Set<string>();
-  let cur = new Date();
-  if (!active.has(todayISO(cur))) cur = new Date(Date.now() - 864e5);
-  while (active.has(todayISO(cur))) {
-    out.add(todayISO(cur));
-    cur = new Date(cur.getTime() - 864e5);
-  }
-  return out;
-}
-
 /**
  * Six-week grid covering `month`, Sunday-first, including the leading and
  * trailing days of adjacent months so every row is full.
@@ -52,7 +39,6 @@ function streakDays(state: TrackerState): Set<string> {
  */
 export function monthGrid(state: TrackerState, year: number, month: number): DayCell[] {
   const today = todayISO();
-  const streak = streakDays(state);
 
   let max = 1;
   for (const k of Object.keys(state.history)) max = Math.max(max, state.history[k]);
@@ -83,7 +69,7 @@ export function monthGrid(state: TrackerState, year: number, month: number): Day
       completions,
       level: completions > 0 ? Math.min(4, Math.ceil((completions / max) * 4)) : 0,
       dueReviews: key >= today ? (dueByDate[key] ?? 0) : 0,
-      inStreak: streak.has(key),
+      hasNote: Boolean(state.dayNotes[key]?.text.trim()),
     });
   }
   return cells;

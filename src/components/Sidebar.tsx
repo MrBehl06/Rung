@@ -1,6 +1,7 @@
 import type { Stats, TrackerState, ViewId } from '../types';
 import type { LevelInfo } from '../lib/game';
 import { joinedSprintDefs } from '../lib/scope';
+import { NavGroup } from './NavGroup';
 import { store } from '../lib/store';
 import { Icon } from './Icons';
 
@@ -10,37 +11,22 @@ export interface NavItem {
   icon: string;
   badge?: string;
   hot?: boolean;
-  /** set on dynamic sprint rows — routed through openSprint */
-  sprintId?: string;
 }
 
-export function navItems(state: TrackerState, stats: Stats, unlocked: number, dueCount: number): NavItem[] {
-  const openQuests = state.today.items.filter((i) => !i.done).length;
-  // one row per joined sprint, so the fixed rows never shift as sprints are added
-  const sprintRows: NavItem[] = joinedSprintDefs(state).map((s) => ({
-    id: 'sprint',
-    sprintId: s.id,
-    label: s.short,
-    icon: s.icon,
-    badge: `${stats.bySprint[s.id]?.pct ?? 0}%`,
-  }));
-
+export function navItems(dueCount: number): NavItem[] {
   return [
     { id: 'dashboard', label: 'Base', icon: '◧' },
-    { id: 'sprints', label: 'Sprints', icon: '◈' },
-    ...sprintRows,
-    { id: 'today', label: 'Quests', icon: '⚔', badge: String(openQuests), hot: openQuests > 0 },
-    { id: 'revision', label: 'Review', icon: '↻', badge: String(dueCount), hot: dueCount > 0 },
     { id: 'calendar', label: 'Calendar', icon: '▦' },
-    { id: 'awards', label: 'Awards', icon: '🏆', badge: String(unlocked) },
-    { id: 'guide', label: 'Guide', icon: '?' },
+    { id: 'sprints', label: 'Sprints', icon: '◈' },
+    { id: 'revision', label: 'Review', icon: '↻', badge: String(dueCount), hot: dueCount > 0 },
+    { id: 'rewards', label: 'Rewards', icon: '☘' },
   ];
 }
 
 interface Props {
   state: TrackerState;
+  stats: Stats;
   lv: LevelInfo;
-  streak: number;
   items: NavItem[];
   collapsed: boolean;
   /** rendered inside the mobile drawer rather than as a fixed rail */
@@ -52,8 +38,8 @@ interface Props {
 
 export function Sidebar({
   state,
+  stats,
   lv,
-  streak,
   items,
   collapsed,
   inDrawer,
@@ -87,32 +73,59 @@ export function Sidebar({
         <span className="side-xp">
           <i style={{ width: `${lv.pct}%` }} />
         </span>
-        <div className="side-streak">
-          <span>🔥 {streak}d streak</span>
-          <span className="spacer" />
-          <span>{lv.xp.toLocaleString()} XP</span>
-        </div>
       </div>
 
       <nav className="side-nav" aria-label="Main">
         {items.map((it) => {
-          const current = it.sprintId
-            ? view === 'sprint' && state.ui.activeSprint === it.sprintId
-            : view === it.id;
+          if (it.id !== 'sprints') {
+            return (
+              <button
+                key={it.id}
+                className="side-link"
+                aria-current={view === it.id ? 'page' : undefined}
+                title={collapsed ? it.label : undefined}
+                onClick={() => onNavigate(it.id)}
+              >
+                <span className="si" aria-hidden="true">{it.icon}</span>
+                <span className="sl">{it.label}</span>
+                {it.badge != null && it.badge !== '' ? (
+                  <span className={`sb ${it.hot ? 'hot' : ''}`}>{it.badge}</span>
+                ) : null}
+              </button>
+            );
+          }
+
+          const sprints = joinedSprintDefs(state);
+          // auto-expand while a sprint page is open, so the current sprint is
+          // never hidden behind a collapsed parent
+          const expanded = view === 'sprint' || state.ui.collapsed['nav-sprints'] !== true;
+
           return (
-            <button
-              key={it.sprintId ?? it.id}
-              className={`side-link ${it.sprintId ? 'is-sprint' : ''}`}
-              aria-current={current ? 'page' : undefined}
-              title={collapsed ? it.label : undefined}
-              onClick={() => (it.sprintId ? store.openSprint(it.sprintId) : onNavigate(it.id))}
+            <NavGroup
+              key="sprints"
+              label={it.label}
+              icon={it.icon}
+              active={view === 'sprints'}
+              expanded={expanded && sprints.length > 0}
+              rail={collapsed}
+              onToggle={() => store.toggleNavGroup()}
+              onNavigate={() => onNavigate('sprints')}
             >
-              <span className="si" aria-hidden="true">{it.icon}</span>
-              <span className="sl">{it.label}</span>
-              {it.badge != null && it.badge !== '' ? (
-                <span className={`sb ${it.hot ? 'hot' : ''}`}>{it.badge}</span>
-              ) : null}
-            </button>
+              {sprints.map((sp) => (
+                <button
+                  key={sp.id}
+                  className="side-link is-child"
+                  aria-current={
+                    view === 'sprint' && state.ui.activeSprint === sp.id ? 'page' : undefined
+                  }
+                  onClick={() => store.openSprint(sp.id)}
+                >
+                  <span className="si" aria-hidden="true">{sp.icon}</span>
+                  <span className="sl">{sp.short}</span>
+                  <span className="sb">{stats.bySprint[sp.id]?.pct ?? 0}%</span>
+                </button>
+              ))}
+            </NavGroup>
           );
         })}
       </nav>
@@ -159,9 +172,9 @@ export function MobileNav({
   view: ViewId;
   onNavigate: (v: ViewId) => void;
 }) {
-  const wanted: ViewId[] = ['dashboard', 'sprints', 'today', 'revision', 'calendar'];
+  const wanted: ViewId[] = ['dashboard', 'calendar', 'sprints', 'revision', 'rewards'];
   const primary = wanted
-    .map((id) => items.find((i) => i.id === id && !i.sprintId))
+    .map((id) => items.find((i) => i.id === id))
     .filter((i): i is NavItem => Boolean(i));
 
   return (

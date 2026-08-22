@@ -1,8 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Stats, TrackerState } from '../types';
-import type { Achievement, HeatCell, LevelInfo, TreeNode } from '../lib/game';
-import { TIER_COLOR, heatmap } from '../lib/game';
-import { todayISO } from '../lib/utils';
+import type { TreeNode } from '../lib/game';
 
 /* ---------- section header ---------- */
 export function SHead({ title, sub, right }: { title: string; sub?: string; right?: ReactNode }) {
@@ -54,118 +51,6 @@ export function Tile({
   );
 }
 
-/* ---------- the hero HUD ---------- */
-export function HeroHud({
-  lv,
-  stats,
-  streak,
-  best,
-  questDone,
-  questTotal,
-  unlockedCount,
-  totalAch,
-}: {
-  lv: LevelInfo;
-  stats: Stats;
-  streak: number;
-  best: number;
-  questDone: number;
-  questTotal: number;
-  unlockedCount: number;
-  totalAch: number;
-}) {
-  return (
-    <div className="hud">
-      <div className="hud-top">
-        <div className="hud-badge" aria-hidden="true">
-          <div style={{ textAlign: 'center' }}>
-            <span>lvl</span>
-            <b>{lv.level}</b>
-          </div>
-        </div>
-
-        <div className="hud-lv">
-          <div className="hud-rank">{lv.rank}</div>
-          <div className="hud-sub">
-            {lv.xp.toLocaleString()} XP total · {lv.toNext.toLocaleString()} to level {lv.level + 1}
-          </div>
-          <div className="xpbar">
-            <i style={{ width: `${lv.pct}%` }} />
-            <em>
-              {lv.into} / {lv.span} XP
-            </em>
-          </div>
-        </div>
-
-        <div className="hud-vitals">
-          <div className="vital fire">
-            <span className="k">Streak</span>
-            <span className="v">{streak}</span>
-            <span className="m">best {best}d</span>
-          </div>
-          <div className="vital ok">
-            <span className="k">Mastery</span>
-            <span className="v">{stats.all.pct}%</span>
-            <span className="m">
-              {stats.all.done}/{stats.all.total}
-            </span>
-          </div>
-          <div className="vital xp">
-            <span className="k">Quests</span>
-            <span className="v">
-              {questDone}/{questTotal}
-            </span>
-            <span className="m">today</span>
-          </div>
-          <div className="vital">
-            <span className="k">Awards</span>
-            <span className="v">{unlockedCount}</span>
-            <span className="m">of {totalAch}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ---------- activity heatmap ---------- */
-export function Heatmap({ state, weeks = 20 }: { state: TrackerState; weeks?: number }) {
-  const cells: HeatCell[] = heatmap(state, weeks);
-  const today = todayISO();
-  const cols: HeatCell[][] = [];
-  for (let i = 0; i < cells.length; i += 7) cols.push(cells.slice(i, i + 7));
-  const active = cells.filter((c) => c.count > 0).length;
-
-  return (
-    <div>
-      <div className="heat">
-        {cols.map((col, i) => (
-          <div className="heat-col" key={i}>
-            {col.map((c) => (
-              <span
-                key={c.date}
-                className="heat-c"
-                data-l={c.level}
-                data-today={c.date === today ? 1 : 0}
-                title={`${c.date} — ${c.count} completed`}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-      <div className="heat-legend">
-        <span>{active} active days</span>
-        <span className="spacer" style={{ flex: 1 }} />
-        <span>less</span>
-        {[0, 1, 2, 3, 4].map((l) => (
-          <span key={l} className="heat-c" data-l={l} />
-        ))}
-        <span>more</span>
-      </div>
-    </div>
-  );
-}
-
 /* ---------- skill tree ---------- */
 export function SkillTree({
   nodes,
@@ -207,53 +92,6 @@ export function SkillTree({
           <span className="node-pct">{n.pct}%</span>
         </button>
       ))}
-    </div>
-  );
-}
-
-/* ---------- achievement card ---------- */
-export function AchCard({ a }: { a: Achievement }) {
-  return (
-    <div
-      className={`ach ${a.unlocked ? 'got' : 'locked'}`}
-      style={{ ['--tc' as string]: TIER_COLOR[a.tier] }}
-    >
-      <span className="ach-tier">{a.tier}</span>
-      <span className="ach-ico" aria-hidden="true">
-        {a.unlocked ? a.icon : '🔒'}
-      </span>
-      <div className="ach-n">{a.name}</div>
-      <div className="ach-d">{a.desc}</div>
-      {!a.unlocked ? (
-        <div className="ach-prog">
-          <Meter p={(a.cur / a.target) * 100} />
-          <span className="pn">
-            {a.cur} / {a.target}
-          </span>
-        </div>
-      ) : (
-        <div className="ach-prog">
-          <span className="pn" style={{ color: TIER_COLOR[a.tier] }}>
-            ✓ unlocked
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ---------- unlock celebration ---------- */
-export function UnlockToast({ a }: { a: Achievement }) {
-  return (
-    <div className="unlock" style={{ ['--tc' as string]: TIER_COLOR[a.tier] }} role="status">
-      <span className="u-ico" aria-hidden="true">
-        {a.icon}
-      </span>
-      <span className="u-txt">
-        <span className="u-lb">{a.tier} unlocked</span>
-        <span className="u-n">{a.name}</span>
-        <span className="u-d">{a.desc}</span>
-      </span>
     </div>
   );
 }

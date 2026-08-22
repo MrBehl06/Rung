@@ -2,7 +2,6 @@ import type {
   Filters,
   SortKey,
   Status,
-  TodayItem,
   Topic,
   TrackerState,
   ViewId,
@@ -12,11 +11,9 @@ import { SPRINTS, categoriesOf, getSprint, resolveSprint } from '../data/sprints
 import { KEY, PERSISTENT, Storage } from './storage';
 import { blankState, loadState, makeTopic } from './model';
 import { SR_STEPS, addDays, stepDays } from './srs';
-import { nowISO, todayISO, uid } from './utils';
+import { nowISO, todayISO } from './utils';
 import { toast, toastUndo } from './toasts';
 import { confirmDialog } from './dialog';
-
-export const MAX_TODAY = 5;
 
 type Listener = () => void;
 
@@ -35,7 +32,6 @@ class TrackerStore {
     this.state = state;
     this.seedsAdded = added;
     if (added) this.writeNow();
-    this.rollTodayIfNeeded();
     this.applyTheme(this.state.ui.theme);
     this.wireWindow();
   }
@@ -105,10 +101,9 @@ class TrackerStore {
     const draft: TrackerState = {
       ...this.state,
       topics: this.state.topics.map((t) => ({ ...t })),
-      today: { ...this.state.today, items: this.state.today.items.map((i) => ({ ...i })) },
       history: { ...this.state.history },
       removedSeeds: [...this.state.removedSeeds],
-      seenAchievements: [...(this.state.seenAchievements ?? [])],
+      dayNotes: { ...this.state.dayNotes },
       joinedSprints: [...this.state.joinedSprints],
       ui: {
         ...this.state.ui,
@@ -191,11 +186,6 @@ class TrackerStore {
         t.srStep = undefined;
         t.srDue = null;
       }
-
-      // keep Today's list in step
-      d.today.items.forEach((it) => {
-        if (it.topicId === id) it.done = status === 'Completed';
-      });
     });
     return result;
   }
@@ -236,10 +226,6 @@ class TrackerStore {
         if (wasCompleted) this.bumpHistory(d, -1);
       }
       t.srDue = addDays(todayISO(), stepDays(t.srStep));
-
-      d.today.items.forEach((it) => {
-        if (it.topicId === id) it.done = t.status === 'Completed';
-      });
       result = t;
     });
     return result;
@@ -309,7 +295,6 @@ class TrackerStore {
       // don't resurrect a deleted catalogue row on the next load
       if (t.sid && !d.removedSeeds.includes(t.sid)) d.removedSeeds.push(t.sid);
       if (t.status === 'Completed') this.bumpHistory(d, -1);
-      d.today.items = d.today.items.filter((it) => it.topicId !== id);
     });
     if (opts.undo !== false) {
       toastUndo(`Deleted “${existing.name}”`, () => this.undo());
@@ -350,8 +335,7 @@ class TrackerStore {
         const [t] = d.topics.splice(i, 1);
         if (t.sid && !d.removedSeeds.includes(t.sid)) d.removedSeeds.push(t.sid);
         if (t.status === 'Completed') this.bumpHistory(d, -1);
-        d.today.items = d.today.items.filter((it) => it.topicId !== id);
-      }
+        }
     });
     toastUndo(`Deleted ${ids.length} topic${ids.length > 1 ? 's' : ''}`, () => this.undo());
   }
@@ -367,77 +351,6 @@ class TrackerStore {
       result = t;
     });
     return result;
-  }
-
-  // ---------- today's focus ----------
-  private rollTodayIfNeeded(): void {
-    const d = todayISO();
-    if (this.state.today.date >= d) return; // today, or planned ahead → leave it
-    const carry = this.state.today.items.filter((it) => !it.done);
-    this.produce((draft) => {
-      draft.today = { date: d, items: carry.map((it) => ({ ...it, carried: true })) };
-    });
-  }
-
-  addToday(topicIdOrText: string): TodayItem | null {
-    if (this.state.today.items.length >= MAX_TODAY) {
-      toast(`Today's focus is capped at ${MAX_TODAY} topics`, 'warn');
-      return null;
-    }
-    const t = this.find(topicIdOrText);
-    const item: TodayItem = t
-      ? { id: uid(), topicId: t.id, text: t.name, done: t.status === 'Completed' }
-      : { id: uid(), topicId: null, text: String(topicIdOrText ?? '').trim(), done: false };
-    if (!item.text) return null;
-    if (item.topicId && this.state.today.items.some((i) => i.topicId === item.topicId)) {
-      toast('Already on today’s list', 'warn');
-      return null;
-    }
-    this.produce((d) => {
-      d.today.items.push(item);
-    });
-    return item;
-  }
-
-  toggleTodayDone(itemId: string): void {
-    const it = this.state.today.items.find((i) => i.id === itemId);
-    if (!it) return;
-    if (it.topicId) {
-      this.setStatus(it.topicId, !it.done ? 'Completed' : 'In Progress');
-      return;
-    }
-    this.produce((d) => {
-      const target = d.today.items.find((i) => i.id === itemId);
-      if (target) target.done = !target.done;
-    });
-  }
-
-  removeToday(itemId: string): void {
-    this.produce((d) => {
-      d.today.items = d.today.items.filter((i) => i.id !== itemId);
-    });
-  }
-
-  carryToTomorrow(): void {
-    const left = this.state.today.items.filter((i) => !i.done);
-    if (!left.length) {
-      toast('Nothing unfinished to carry over');
-      return;
-    }
-    this.produce((d) => {
-      d.today = {
-        date: todayISO(new Date(Date.now() + 864e5)),
-        items: left.map((i) => ({ ...i, carried: true })),
-      };
-    });
-    toast(`Carried ${left.length} topic${left.length > 1 ? 's' : ''} to tomorrow`, 'ok');
-  }
-
-  clearTodayDone(): void {
-    if (!this.state.today.items.some((i) => i.done)) return;
-    this.produce((d) => {
-      d.today.items = d.today.items.filter((i) => !i.done);
-    });
   }
 
   // ---------- ui ----------
@@ -527,6 +440,13 @@ class TrackerStore {
     });
   }
 
+  /** expand/collapse the sidebar's Sprints group; persisted like other UI state */
+  toggleNavGroup(): void {
+    this.produce((d) => {
+      d.ui.collapsed['nav-sprints'] = d.ui.collapsed['nav-sprints'] !== true;
+    }, 'soon');
+  }
+
   toggleSidebar(): void {
     this.produce((d) => {
       d.ui.sidebar = d.ui.sidebar === 'collapsed' ? 'expanded' : 'collapsed';
@@ -537,15 +457,6 @@ class TrackerStore {
     this.produce((d) => {
       d.ui.sort = sort;
     }, 'soon');
-  }
-
-  /** record that these achievement ids have been celebrated */
-  markAchievementsSeen(ids: string[]): void {
-    if (!ids.length) return;
-    this.produce((d) => {
-      const set = new Set([...(d.seenAchievements ?? []), ...ids]);
-      d.seenAchievements = [...set];
-    });
   }
 
   // ---------- backup ----------

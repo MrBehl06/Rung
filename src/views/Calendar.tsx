@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { TrackerState } from '../types';
 import { dayDetail, monthConsistency, monthGrid, monthLabel } from '../lib/calendar';
-import { completionStreak } from '../lib/stats';
-import { longestStreak } from '../lib/game';
 import { todayISO } from '../lib/utils';
 import { SHead, Tile } from '../components/hud';
 
@@ -16,8 +14,6 @@ export function Calendar({ state, onOpen }: { state: TrackerState; onOpen: (id: 
 
   const cells = useMemo(() => monthGrid(state, year, month), [state, year, month]);
   const detail = useMemo(() => (picked ? dayDetail(state, picked) : null), [state, picked]);
-  const streak = completionStreak(state);
-  const best = Math.max(streak, longestStreak(state));
   const consistency = monthConsistency(state, year, month);
 
   useEffect(() => {
@@ -61,15 +57,9 @@ export function Calendar({ state, onOpen }: { state: TrackerState; onOpen: (id: 
   const label = monthLabel(year, month);
 
   return (
-    <section className="view">
+    <section className="view cal">
       <div className="bento">
-        <div className="c4">
-          <Tile k="Current streak" v={`${streak}d`} m="days in a row" cls="fire" icon="🔥" />
-        </div>
-        <div className="c4">
-          <Tile k="Best streak" v={`${best}d`} m="all time" cls="xp" icon="⚡" />
-        </div>
-        <div className="c4">
+        <div className="c12">
           <Tile
             k="Consistency"
             v={consistency == null ? '—' : `${consistency}%`}
@@ -114,7 +104,7 @@ export function Calendar({ state, onOpen }: { state: TrackerState; onOpen: (id: 
               key={c.date}
               type="button"
               role="gridcell"
-              className={`cal-c ${c.inMonth ? '' : 'out'} ${c.inStreak ? 'streak' : ''} ${picked === c.date ? 'sel' : ''}`}
+              className={`cal-c ${c.inMonth ? '' : 'out'} ${picked === c.date ? 'sel' : ''}`}
               data-l={c.level}
               data-today={c.isToday ? 1 : 0}
               aria-label={`${c.date}: ${c.completions} completed${c.dueReviews ? `, ${c.dueReviews} due` : ''}`}

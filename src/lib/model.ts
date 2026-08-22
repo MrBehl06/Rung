@@ -1,5 +1,5 @@
-import type { Difficulty, Status, Topic, TrackerState } from '../types';
-import { DIFFS, STATUSES } from '../types';
+import type { DayNote, Difficulty, Status, Topic, TrackerState } from '../types';
+import { DIFFS, STATUSES, VIEWS } from '../types';
 import { SPRINTS, getSprint, resolveSprint, seedRows } from '../data/sprints';
 import { KEY, SCHEMA, Storage } from './storage';
 import { nowISO, todayISO, uid } from './utils';
@@ -8,10 +8,9 @@ export function blankState(): TrackerState {
   return {
     schema: SCHEMA,
     topics: [],
-    today: { date: todayISO(), items: [] },
     history: {},
     removedSeeds: [],
-    seenAchievements: [],
+    dayNotes: {},
     joinedSprints: [],
     ui: {
       theme: 'dark',
@@ -86,11 +85,29 @@ export function loadState(raw?: string | null): LoadResult {
     state = { ...blank, ...saved } as TrackerState;
     state.ui = { ...blank.ui, ...(saved.ui ?? {}) };
     state.ui.filters = { ...blank.ui.filters, ...(saved.ui?.filters ?? {}) };
-    state.today =
-      saved.today && Array.isArray(saved.today.items) ? saved.today : blank.today;
     state.history = saved.history ?? {};
+    // dropped fields (`today`, `seenAchievements`) are simply not read; neither
+    // contributed to XP, completion state or history, so no progress is lost
+    state.dayNotes = (saved as { dayNotes?: Record<string, DayNote> }).dayNotes ?? {};
+
+    // `{ ...blank, ...saved }` carries unknown keys through, so removed fields
+    // would otherwise live in the save forever. Nothing reads them; drop them.
+    delete (state as { today?: unknown }).today;
+    delete (state as { seenAchievements?: unknown }).seenAchievements;
+
+    // --- ui.view: 'hld' / 'lld' became the single 'sprint' view ---
+    const legacyView = String(state.ui.view);
+    if (legacyView === 'hld' || legacyView === 'lld') {
+      state.ui.activeSprint = legacyView;
+      state.ui.view = 'sprint';
+    }
+
+    // a view that no longer exists would render an empty page — send it home
+    if (!VIEWS.includes(state.ui.view) && state.ui.view !== 'sprint') {
+      state.ui.view = 'dashboard';
+      state.ui.activeSprint = state.ui.activeSprint ?? null;
+    }
     state.removedSeeds = saved.removedSeeds ?? [];
-    state.seenAchievements = saved.seenAchievements ?? [];
     state.topics = saved.topics.map(makeTopic);
 
     // --- joinedSprints: absent means a pre-sprint save, which had everything on ---
@@ -100,13 +117,6 @@ export function loadState(raw?: string | null): LoadResult {
       : state.topics.length
         ? SPRINTS.map((s) => s.id)
         : [];
-
-    // --- ui.view: 'hld' / 'lld' became the single 'sprint' view ---
-    const legacyView = String(state.ui.view);
-    if (legacyView === 'hld' || legacyView === 'lld') {
-      state.ui.activeSprint = legacyView;
-      state.ui.view = 'sprint';
-    }
 
     // --- ui.filters.type: 'HLD' -> 'hld' ---
     // Test the SAVED object, not the merged one: blank.ui.filters already

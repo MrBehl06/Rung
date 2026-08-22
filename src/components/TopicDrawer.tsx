@@ -205,18 +205,9 @@ export function TopicDrawer({ topic: t, onClose, onEdit }: Props) {
             <Icon name="trash" size={12} />
             Delete
           </button>
-          <button className="btn" onClick={() => onEdit(t.id)}>
+          <button className="btn primary" onClick={() => onEdit(t.id)}>
             <Icon name="edit" size={12} />
             Edit fields
-          </button>
-          <button
-            className="btn primary"
-            onClick={() => {
-              if (store.addToday(t.id)) toast('Added to today’s quests', 'ok');
-            }}
-          >
-            <Icon name="plus" size={12} />
-            Add quest
           </button>
         </footer>
       </div>

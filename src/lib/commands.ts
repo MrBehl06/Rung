@@ -229,13 +229,6 @@ const CMDS: Cmd[] = [
     },
   },
   {
-    re: /^(?:today|focus(?:\s+on)?|plan)\s+(.+)$/i,
-    act: (t) => {
-      store.addToday(t.id);
-      return `Added “${t.name}” to Today’s Focus`;
-    },
-  },
-  {
     re: /^(?:note|notes)\s+(?:on\s+|for\s+)?(.+?)\s*[:—-]\s*(.+)$/i,
     run: (m) => {
       const r = matchTopic(m[1]);

@@ -25,13 +25,11 @@ interface ViewTarget {
 /** fixed destinations plus one row per registered sprint */
 const VIEW_TARGETS: ViewTarget[] = [
   { id: 'dashboard', label: 'Base', icon: '◧' },
+  { id: 'calendar', label: 'Calendar', icon: '▦' },
   { id: 'sprints', label: 'Sprints', icon: '◈' },
   ...SPRINTS.map((s) => ({ id: 'sprint' as ViewId, label: s.short, icon: s.icon, sprintId: s.id })),
-  { id: 'today', label: 'Quests', icon: '⚔' },
   { id: 'revision', label: 'Review', icon: '↻' },
-  { id: 'calendar', label: 'Calendar', icon: '▦' },
-  { id: 'awards', label: 'Awards', icon: '🏆' },
-  { id: 'guide', label: 'Guide', icon: '?' },
+  { id: 'rewards', label: 'Rewards', icon: '☘' },
 ];
 
 interface Props {

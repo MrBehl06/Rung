@@ -9,7 +9,7 @@ import type {
 import { DIFFS } from '../types';
 import { SPRINTS, categoriesOf, categoryRank } from '../data/sprints';
 import { activeTopics } from './scope';
-import { pct, todayISO } from './utils';
+import { pct } from './utils';
 
 /** Every number on the dashboard comes from here — nothing is ever stored. */
 export function statsFor(list: Topic[]): Stat {
@@ -85,22 +85,6 @@ export function computeStats(state: TrackerState): Stats {
     byCat,
     byDiff,
   };
-}
-
-/** consecutive days (ending today or yesterday) with at least one completion */
-export function completionStreak(state: TrackerState): number {
-  const days = Object.keys(state.history).filter((k) => state.history[k] > 0);
-  if (!days.length) return 0;
-  const set = new Set(days);
-  let streak = 0;
-  let cur = new Date();
-  if (!set.has(todayISO(cur))) cur = new Date(Date.now() - 864e5);
-  for (;;) {
-    if (!set.has(todayISO(cur))) break;
-    streak++;
-    cur = new Date(cur.getTime() - 864e5);
-  }
-  return streak;
 }
 
 /** "What should I study next?" — resume work in flight, then fundamentals, then easy wins. */

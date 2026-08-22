@@ -5,14 +5,12 @@ import { store } from './lib/store';
 import { SPRINTS } from './data/sprints';
 import { monthGrid } from './lib/calendar';
 import { dismissToast, toast, toastStore } from './lib/toasts';
-import { computeStats, completionStreak, suggestNext } from './lib/stats';
+import { computeStats, suggestNext } from './lib/stats';
 import { findCategory, matchTopic, runCommand } from './lib/commands';
-import { achievements, levelInfo, questState } from './lib/game';
-import type { Achievement } from './lib/game';
+import { levelInfo } from './lib/game';
 import { reviewBuckets } from './lib/srs';
 import { PERSISTENT } from './lib/storage';
 import { Icon, IconSprite } from './components/Icons';
-import { UnlockToast } from './components/hud';
 import { MobileNav, Sidebar, navItems } from './components/Sidebar';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { TopicModal } from './components/TopicModal';
@@ -22,10 +20,8 @@ import { Dashboard } from './views/Dashboard';
 import { Sprints } from './views/Sprints';
 import { Calendar } from './views/Calendar';
 import { TopicsView } from './views/TopicsView';
-import { Today } from './views/Today';
 import { Revision } from './views/Revision';
-import { Awards } from './views/Awards';
-import { Guide } from './views/Guide';
+import { Rewards } from './views/Rewards';
 
 export default function App() {
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot);
@@ -33,43 +29,19 @@ export default function App() {
 
   const stats = useMemo(() => computeStats(state), [state]);
   const lv = useMemo(() => levelInfo(state), [state]);
-  const ach = useMemo(() => achievements(state), [state]);
-  const quests = useMemo(() => questState(state), [state]);
   const buckets = useMemo(() => reviewBuckets(state), [state]);
-  const streak = useMemo(() => completionStreak(state), [state]);
 
   const [modal, setModal] = useState<{ id: string | null } | null>(null);
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [unlockQueue, setUnlockQueue] = useState<Achievement[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const view = state.ui.view;
   const collapsed = state.ui.sidebar === 'collapsed';
-  const anyOverlay = modal !== null || paletteOpen || drawerId !== null || mobileNavOpen;
+  const anyOverlay = modal !== null || paletteOpen || drawerId !== null;
 
   const dueCount = buckets.due.length + buckets.flagged.length;
-  const unlockedCount = ach.filter((a) => a.unlocked).length;
-  const items = navItems(state, stats, unlockedCount, dueCount);
-
-  // ---- celebrate newly unlocked achievements exactly once ----
-  const seen = state.seenAchievements;
-  useEffect(() => {
-    const already = seen ?? [];
-    const fresh = ach.filter((a) => a.unlocked && !already.includes(a.id));
-    if (!fresh.length) return;
-    setUnlockQueue((q) => [...q, ...fresh.filter((f) => !q.some((x) => x.id === f.id))]);
-    store.markAchievementsSeen(fresh.map((a) => a.id));
-  }, [ach, seen]);
-
-  useEffect(() => {
-    if (!unlockQueue.length) return;
-    const id = setTimeout(() => setUnlockQueue((q) => q.slice(1)), 2800);
-    return () => clearTimeout(id);
-  }, [unlockQueue]);
-
-  const unlock = unlockQueue[0] ?? null;
+  const items = navItems(dueCount);
 
   // ---- level-up announcement ----
   const prevLevel = useRef(lv.level);
@@ -99,7 +71,6 @@ export default function App() {
         setModal(null);
         setPaletteOpen(false);
         setDrawerId(null);
-        setMobileNavOpen(false);
         return;
       }
       if (typing || anyOverlay) return;
@@ -122,7 +93,7 @@ export default function App() {
       } else if (e.key.toLowerCase() === 'b') {
         e.preventDefault();
         store.toggleSidebar();
-      } else if (/^[1-7]$/.test(e.key)) {
+      } else if (/^[1-5]$/.test(e.key)) {
         store.switchView(VIEWS[Number(e.key) - 1]);
       }
     }
@@ -153,8 +124,6 @@ export default function App() {
       run: (input: string) => runCommand(input, (id) => setDrawerId(id)),
       stats: () => computeStats(store.getSnapshot()),
       level: () => levelInfo(store.getSnapshot()),
-      awards: () => achievements(store.getSnapshot()),
-      streak: () => completionStreak(store.getSnapshot()),
       reviews: () => reviewBuckets(store.getSnapshot()),
       sprints: () => ({
         registered: SPRINTS.map((s) => ({ id: s.id, name: s.name })),
@@ -183,11 +152,6 @@ export default function App() {
         const f = findCategory(cat);
         return t && f ? store.moveTopic(t.id, f.sprint, f.cat) : null;
       },
-      today: {
-        add: (q: string) => { const t = pick(q); return store.addToday(t ? t.id : q); },
-        list: () => store.getSnapshot().today,
-        carry: () => store.carryToTomorrow(),
-      },
       export: () => store.exportData(),
       wipe: () => store.wipe(),
       storage: PERSISTENT ? 'localStorage' : 'memory',
@@ -202,10 +166,7 @@ export default function App() {
     setDrawerId(null);
     setModal({ id });
   };
-  const go = (v: ViewId) => {
-    store.switchView(v);
-    setMobileNavOpen(false);
-  };
+  const go = (v: ViewId) => store.switchView(v);
 
   return (
     <div className={`shell ${collapsed ? 'rail' : ''}`}>
@@ -213,8 +174,8 @@ export default function App() {
 
       <Sidebar
         state={state}
+        stats={stats}
         lv={lv}
-        streak={streak}
         items={items}
         collapsed={collapsed}
         onNavigate={go}
@@ -224,22 +185,7 @@ export default function App() {
 
       <div className="main-col">
         <header className="topbar">
-          <button
-            className="btn ghost icon-btn only-mobile"
-            aria-label="Open menu"
-            onClick={() => setMobileNavOpen(true)}
-          >
-            <span aria-hidden="true">☰</span>
-          </button>
-
-          <button className="omni" onClick={() => setPaletteOpen(true)}>
-            <Icon name="search" size={14} />
-            <span>Jump to a topic or run a command</span>
-            <span className="kbd">⌘K</span>
-          </button>
-
           <span className="spacer" />
-
           <button className="btn primary" onClick={() => setModal({ id: null })}>
             <Icon name="plus" size={13} />
             <span className="lbl">New</span>
@@ -259,7 +205,14 @@ export default function App() {
         </header>
 
         <main>
-          {view === 'dashboard' && <Dashboard state={state} stats={stats} onEdit={openEdit} onOpen={openDrawer} onGo={go} />}
+          {view === 'dashboard' && (
+            <Dashboard
+              state={state}
+              onOpen={openDrawer}
+              onExport={() => store.exportData()}
+              onImport={() => fileRef.current?.click()}
+            />
+          )}
           {view === 'sprints' && <Sprints state={state} />}
           {view === 'sprint' && (
             <TopicsView
@@ -270,40 +223,18 @@ export default function App() {
             />
           )}
           {view === 'calendar' && <Calendar state={state} onOpen={openDrawer} />}
-          {view === 'today' && <Today state={state} onEdit={openEdit} onOpen={openDrawer} />}
+          {view === 'rewards' && <Rewards />}
           {view === 'revision' && <Revision state={state} onOpen={openDrawer} />}
-          {view === 'awards' && <Awards state={state} />}
-          {view === 'guide' && <Guide state={state} stats={stats} quests={quests} onImport={() => fileRef.current?.click()} />}
         </main>
 
         <MobileNav items={items} view={view} onNavigate={go} />
       </div>
-
-      {/* mobile drawer holding the full sidebar */}
-      {mobileNavOpen ? (
-        <div className="mdrawer-ovl" onClick={(e) => e.target === e.currentTarget && setMobileNavOpen(false)}>
-          <div className="mdrawer">
-            <Sidebar
-              state={state}
-              lv={lv}
-              streak={streak}
-              items={items}
-              collapsed={false}
-              inDrawer
-              onNavigate={go}
-              onExport={() => { store.exportData(); setMobileNavOpen(false); }}
-              onImport={() => { fileRef.current?.click(); setMobileNavOpen(false); }}
-            />
-          </div>
-        </div>
-      ) : null}
 
       {drawerTopic ? (
         <TopicDrawer topic={drawerTopic} onClose={() => setDrawerId(null)} onEdit={openEdit} />
       ) : null}
       {modal !== null && <TopicModal editing={editingTopic} state={state} onClose={() => setModal(null)} />}
       {paletteOpen && <Palette onClose={() => setPaletteOpen(false)} onOpenTopic={openDrawer} />}
-      {unlock ? <UnlockToast a={unlock} /> : null}
       <ConfirmDialog />
 
       <div id="toasts" aria-live="polite">

@@ -2,7 +2,6 @@ import type { Topic } from '../types';
 import { getSprint } from '../data/sprints';
 import { store } from '../lib/store';
 import { confirmDialog } from '../lib/dialog';
-import { toast } from '../lib/toasts';
 import { fmtDate } from '../lib/utils';
 import { xpFor } from '../lib/game';
 import { daysUntilDue, dueLabel } from '../lib/srs';
@@ -14,14 +13,13 @@ interface Props {
   onEdit: (id: string) => void;
   /** open the detail drawer */
   onOpen?: (id: string) => void;
-  noToday?: boolean;
-  selected?: boolean;
+    selected?: boolean;
   onSelect?: () => void;
   /** j/k cursor is on this row */
   active?: boolean;
 }
 
-export function TopicRow({ topic: t, onEdit, onOpen, noToday, selected, onSelect, active }: Props) {
+export function TopicRow({ topic: t, onEdit, onOpen, selected, onSelect, active }: Props) {
   const done = t.status === 'Completed';
   const due = daysUntilDue(t);
   const overdue = due !== null && due <= 0 && done;
@@ -95,17 +93,6 @@ export function TopicRow({ topic: t, onEdit, onOpen, noToday, selected, onSelect
         <button className="btn xs ghost" title="Edit fields" onClick={() => onEdit(t.id)}>
           <Icon name="edit" size={12} />
         </button>
-        {!noToday ? (
-          <button
-            className="btn xs ghost"
-            title="Add to today's quests"
-            onClick={() => {
-              if (store.addToday(t.id)) toast(`“${t.name}” added to today’s quests`, 'ok');
-            }}
-          >
-            +Quest
-          </button>
-        ) : null}
         {t.status !== 'Not Started' ? (
           <button className="btn xs ghost" title="Reset to Not Started" onClick={() => store.reset(t.id)}>
             <Icon name="reset" size={12} />

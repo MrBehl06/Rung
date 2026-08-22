@@ -519,6 +519,14 @@ class TrackerStore {
     }, 'soon');
   }
 
+  /** remember that the landing page has been passed */
+  enter(): void {
+    if (this.state.ui.entered) return;
+    this.produce((d) => {
+      d.ui.entered = true;
+    }, 'soon');
+  }
+
   toggleSidebar(): void {
     this.produce((d) => {
       d.ui.sidebar = d.ui.sidebar === 'collapsed' ? 'expanded' : 'collapsed';

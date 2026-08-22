@@ -22,6 +22,8 @@ import { Calendar } from './views/Calendar';
 import { TopicsView } from './views/TopicsView';
 import { Revision } from './views/Revision';
 import { Rewards } from './views/Rewards';
+import { Saved } from './views/Saved';
+import { Landing } from './views/Landing';
 
 export default function App() {
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot);
@@ -30,6 +32,12 @@ export default function App() {
   const stats = useMemo(() => computeStats(state), [state]);
   const lv = useMemo(() => levelInfo(state), [state]);
   const buckets = useMemo(() => reviewBuckets(state), [state]);
+
+  // landing shows on a first visit; once passed, returning visits go straight in.
+  // '#home' always brings it back.
+  const [entered, setEntered] = useState(
+    () => window.location.hash !== '#home' && (window.location.hash === '#app' || state.ui.entered === true),
+  );
 
   const [modal, setModal] = useState<{ id: string | null } | null>(null);
   const [drawerId, setDrawerId] = useState<string | null>(null);
@@ -41,7 +49,17 @@ export default function App() {
   const anyOverlay = modal !== null || paletteOpen || drawerId !== null;
 
   const dueCount = buckets.due.length + buckets.flagged.length;
-  const items = navItems(dueCount);
+  const savedCount = state.topics.filter((t) => t.bookmarked).length;
+  const items = navItems(dueCount, savedCount);
+
+  // keep the back button working between the landing page and the app
+  useEffect(() => {
+    function onHash() {
+      setEntered(window.location.hash !== '#home');
+    }
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
 
   // ---- level-up announcement ----
   const prevLevel = useRef(lv.level);
@@ -93,7 +111,7 @@ export default function App() {
       } else if (e.key.toLowerCase() === 'b') {
         e.preventDefault();
         store.toggleSidebar();
-      } else if (/^[1-5]$/.test(e.key)) {
+      } else if (/^[1-6]$/.test(e.key)) {
         store.switchView(VIEWS[Number(e.key) - 1]);
       }
     }
@@ -170,6 +188,21 @@ export default function App() {
   };
   const go = (v: ViewId) => store.switchView(v);
 
+  if (!entered) {
+    return (
+      <>
+        <IconSprite />
+        <Landing
+          onOpen={() => {
+            store.enter();
+            window.location.hash = '#app';
+            setEntered(true);
+          }}
+        />
+      </>
+    );
+  }
+
   return (
     <div className={`shell ${collapsed ? 'rail' : ''}`}>
       <IconSprite />
@@ -220,6 +253,7 @@ export default function App() {
             />
           )}
           {view === 'calendar' && <Calendar state={state} onOpen={openDrawer} />}
+          {view === 'saved' && <Saved state={state} onOpen={openDrawer} onEdit={openEdit} />}
           {view === 'rewards' && <Rewards />}
           {view === 'revision' && <Revision state={state} onOpen={openDrawer} />}
         </main>

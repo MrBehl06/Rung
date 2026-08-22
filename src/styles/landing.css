@@ -1,0 +1,58 @@
+/* Landing page. Deliberately shares only the tokens — none of the app chrome. */
+.lp{
+  min-height:100vh;background:var(--panel);color:var(--tx);
+  display:flex;flex-direction:column;
+}
+
+.lp-nav{
+  display:flex;align-items:center;justify-content:space-between;
+  max-width:980px;width:100%;margin:0 auto;padding:22px 26px;
+}
+.lp-brand{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;letter-spacing:-.01em}
+.lp-mark{
+  width:28px;height:28px;display:grid;place-items:center;flex:none;
+  background:var(--xp);color:var(--panel);border-radius:8px;
+}
+
+.lp-hero{
+  max-width:980px;width:100%;margin:0 auto;padding:11vh 26px 0;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+}
+.lp-hero h1{
+  margin:0;font-size:clamp(2.6rem,1.4rem + 5vw,5.2rem);
+  font-weight:800;letter-spacing:-.045em;line-height:1.02;
+}
+.lp-sub{
+  margin:26px 0 0;max-width:34rem;font-size:clamp(1rem,.95rem + .35vw,1.2rem);
+  line-height:1.6;color:var(--tx-2);
+}
+.lp-cta{margin-top:34px;padding:12px 26px;font-size:15px;border-radius:999px}
+.lp-note{margin-top:14px;font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3)}
+
+.lp-points{
+  max-width:980px;width:100%;margin:0 auto;padding:16vh 26px 0;
+  display:grid;gap:60px 56px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+}
+.lp-points article{max-width:34rem}
+.lp-k{
+  font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3);
+  text-transform:uppercase;letter-spacing:1.1px;
+}
+.lp-points h2{
+  margin:12px 0 0;font-size:clamp(1.3rem,1.1rem + .8vw,1.75rem);
+  font-weight:750;letter-spacing:-.025em;line-height:1.2;
+}
+.lp-points p{margin:12px 0 0;color:var(--tx-2);font-size:var(--fs-md);line-height:1.65}
+
+.lp-foot{
+  max-width:980px;width:100%;margin:16vh auto 0;padding:26px;
+  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3);
+}
+
+@media (max-width:640px){
+  .lp-hero{padding-top:8vh}
+  .lp-points{padding-top:11vh;gap:44px}
+  .lp-foot{margin-top:11vh}
+}

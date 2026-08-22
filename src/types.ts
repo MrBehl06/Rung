@@ -10,11 +10,12 @@ export type ViewId =
   | 'sprint'
   | 'revision'
   | 'calendar'
+  | 'saved'
   | 'rewards';
 
 /** digit-shortcut order; the 'sprint' view is reached by click, not by number */
 export const VIEWS: ViewId[] = [
-  'dashboard', 'calendar', 'sprints', 'revision', 'rewards',
+  'dashboard', 'calendar', 'sprints', 'revision', 'saved', 'rewards',
 ];
 
 export interface TopicLink {
@@ -76,6 +77,8 @@ export interface UiState {
   sort?: SortKey;
   /** which sprint the 'sprint' view renders */
   activeSprint?: string | null;
+  /** the landing page has been passed once; returning visits go straight in */
+  entered?: boolean;
 }
 
 export interface DayNote {

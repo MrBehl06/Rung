@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { TrackerState } from '../types';
 import { dayDetail, monthConsistency, monthGrid, monthLabel } from '../lib/calendar';
+import { completionStreak, longestStreak, weekProgress } from '../lib/streak';
 import { todayISO } from '../lib/utils';
 import { SHead } from '../components/hud';
 import { DayDrawer } from '../components/DayDrawer';
@@ -16,6 +17,10 @@ export function Calendar({ state, onOpen }: { state: TrackerState; onOpen: (id: 
   const cells = useMemo(() => monthGrid(state, year, month), [state, year, month]);
   const detail = useMemo(() => (picked ? dayDetail(state, picked) : null), [state, picked]);
   const consistency = monthConsistency(state, year, month);
+  const streak = completionStreak(state);
+  const best = Math.max(streak, longestStreak(state));
+  const week = weekProgress(state);
+  const activeDays = Object.values(state.history).filter((n) => n > 0).length;
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -59,10 +64,44 @@ export function Calendar({ state, onOpen }: { state: TrackerState; onOpen: (id: 
 
   return (
     <section className="view cal">
+      <div className="streaks">
+        <div className="streak-main">
+          <span className="streak-n">{streak}</span>
+          <span className="streak-lbl">
+            day{streak === 1 ? '' : 's'} in a row
+            {best > streak ? <em> · best {best}</em> : null}
+          </span>
+        </div>
+
+        <div className="streak-week">
+          <span className="streak-week-top">
+            <span>this week</span>
+            <b className={week.done ? 'done' : ''}>
+              {week.hit}/{week.target}
+            </b>
+          </span>
+          <span className="streak-dots">
+            {week.days.map((on, i) => (
+              <i key={i} className={on ? 'on' : ''} />
+            ))}
+          </span>
+        </div>
+
+        <dl className="streak-stats">
+          <div>
+            <dt>Active days</dt>
+            <dd>{activeDays}</dd>
+          </div>
+          <div>
+            <dt>This month</dt>
+            <dd>{consistency == null ? '—' : `${consistency}%`}</dd>
+          </div>
+        </dl>
+      </div>
+
       <div className="panel pad">
         <SHead
           title={label}
-          sub={consistency == null ? undefined : `${consistency}% active`}
           right={
             <span className="cal-nav">
               <button className="btn xs ghost" aria-label="Previous month" onClick={() => shift(-1)}>

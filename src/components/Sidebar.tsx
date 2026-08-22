@@ -14,12 +14,13 @@ export interface NavItem {
   hot?: boolean;
 }
 
-export function navItems(dueCount: number): NavItem[] {
+export function navItems(dueCount: number, savedCount: number): NavItem[] {
   return [
     { id: 'dashboard', label: 'Base', icon: '◧' },
     { id: 'calendar', label: 'Calendar', icon: '▦' },
     { id: 'sprints', label: 'Sprints', icon: '◈' },
     { id: 'revision', label: 'Review', icon: '↻', badge: String(dueCount), hot: dueCount > 0 },
+    { id: 'saved', label: 'Saved', icon: '★', badge: savedCount ? String(savedCount) : '' },
     { id: 'rewards', label: 'Rewards', icon: '☘' },
   ];
 }
@@ -198,7 +199,7 @@ export function MobileNav({
   view: ViewId;
   onNavigate: (v: ViewId) => void;
 }) {
-  const wanted: ViewId[] = ['dashboard', 'calendar', 'sprints', 'revision', 'rewards'];
+  const wanted: ViewId[] = ['dashboard', 'calendar', 'sprints', 'revision', 'saved'];
   const primary = wanted
     .map((id) => items.find((i) => i.id === id))
     .filter((i): i is NavItem => Boolean(i));

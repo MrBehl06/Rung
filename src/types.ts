@@ -77,8 +77,6 @@ export interface UiState {
   sort?: SortKey;
   /** which sprint the 'sprint' view renders */
   activeSprint?: string | null;
-  /** the landing page has been passed once; returning visits go straight in */
-  entered?: boolean;
 }
 
 export interface DayNote {

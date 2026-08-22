@@ -24,6 +24,7 @@ import { Revision } from './views/Revision';
 import { Rewards } from './views/Rewards';
 import { Saved } from './views/Saved';
 import { Landing } from './views/Landing';
+import { currentRoute, navigate, onRouteChange } from './lib/router';
 
 export default function App() {
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot);
@@ -33,11 +34,7 @@ export default function App() {
   const lv = useMemo(() => levelInfo(state), [state]);
   const buckets = useMemo(() => reviewBuckets(state), [state]);
 
-  // landing shows on a first visit; once passed, returning visits go straight in.
-  // '#home' always brings it back.
-  const [entered, setEntered] = useState(
-    () => window.location.hash !== '#home' && (window.location.hash === '#app' || state.ui.entered === true),
-  );
+  const [route, setRoute] = useState(currentRoute);
 
   const [modal, setModal] = useState<{ id: string | null } | null>(null);
   const [drawerId, setDrawerId] = useState<string | null>(null);
@@ -52,14 +49,8 @@ export default function App() {
   const savedCount = state.topics.filter((t) => t.bookmarked).length;
   const items = navItems(dueCount, savedCount);
 
-  // keep the back button working between the landing page and the app
-  useEffect(() => {
-    function onHash() {
-      setEntered(window.location.hash !== '#home');
-    }
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
+  // back / forward between the two routes
+  useEffect(() => onRouteChange(() => setRoute(currentRoute())), []);
 
   // ---- level-up announcement ----
   const prevLevel = useRef(lv.level);
@@ -188,17 +179,11 @@ export default function App() {
   };
   const go = (v: ViewId) => store.switchView(v);
 
-  if (!entered) {
+  if (route === 'home') {
     return (
       <>
         <IconSprite />
-        <Landing
-          onOpen={() => {
-            store.enter();
-            window.location.hash = '#app';
-            setEntered(true);
-          }}
-        />
+        <Landing onOpen={() => navigate('app')} />
       </>
     );
   }

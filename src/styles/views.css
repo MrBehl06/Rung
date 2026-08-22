@@ -318,7 +318,8 @@
 .base-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--xp),var(--xp-2));border-radius:999px}
 .base-xp{font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3);margin-top:2px}
 
-.base-next{display:flex;flex-direction:column}
+.base-next{display:flex;flex-direction:column;margin-bottom:34px}
+.base-next:last-of-type{margin-bottom:0}
 .base-lbl{
   display:block;font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3);
   text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px;
@@ -543,3 +544,42 @@
 /* a starred card keeps its star visible whether or not you are hovering */
 .tcard-star.on{opacity:1;color:var(--tx)}
 @media (hover:none){.tcard-star{opacity:1}}
+
+/* ---------- base: due + today ---------- */
+
+.as-lbl{
+  background:none;border:0;padding:0;font:inherit;cursor:pointer;text-align:left;
+  display:flex;align-items:center;gap:8px;
+}
+.as-lbl:hover{color:var(--tx)}
+.as-lbl em{
+  font-style:normal;font-family:var(--mono);font-size:10px;font-weight:700;
+  color:var(--panel);background:var(--warn);border-radius:999px;padding:1px 7px;
+}
+.base-more{
+  background:none;border:0;padding:12px 4px 0;font:inherit;cursor:pointer;text-align:left;
+  font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3);
+}
+.base-more:hover{color:var(--tx)}
+.base-todo{
+  display:flex;align-items:flex-start;gap:11px;cursor:pointer;
+  padding:13px 4px;border-bottom:1px solid var(--line);font-size:var(--fs-md);
+}
+.base-todo input{
+  appearance:none;-webkit-appearance:none;flex:none;
+  width:17px;height:17px;margin-top:1px;cursor:pointer;
+  border:1.5px solid var(--line-2);border-radius:5px;background:transparent;
+  transition:border-color var(--dur-fast) var(--ease-out);
+}
+.base-todo:hover input{border-color:var(--tx)}
+
+/* ---------- chip strip trailing control ---------- */
+.cat-strip-end{margin-left:auto;display:flex;align-items:center}
+.cat-toggle{
+  background:none;border:0;padding:6px 2px;font:inherit;cursor:pointer;
+  font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3);white-space:nowrap;
+}
+.cat-toggle:hover{color:var(--tx)}
+
+/* struggled reads as a warning, not a difficulty */
+.d-struggled{color:var(--warn);font-weight:700}

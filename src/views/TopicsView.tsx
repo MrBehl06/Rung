@@ -94,6 +94,7 @@ export function TopicsView({
   const tree = skillTree(state, sprintId);
   const cats = allCategories(state, f.sprint);
   const savedCount = scoped.filter((t) => t.bookmarked).length;
+  const allOpen = cats.every((c) => state.ui.collapsed[slug(c)] !== true);
 
   // grouped when in catalogue order, flat when explicitly sorted
   const grouped = sort === 'default';
@@ -235,6 +236,15 @@ export function TopicsView({
             </em>
           </button>
         ))}
+        <span className="cat-strip-end">
+          <button
+            className="cat-toggle"
+            onClick={() => store.setAllCollapsed(cats.map(slug), !allOpen)}
+            title={allOpen ? 'Collapse every track' : 'Expand every track'}
+          >
+            {allOpen ? 'Collapse all' : 'Expand all'}
+          </button>
+        </span>
       </div>
 
       <div className="bento">
@@ -290,33 +300,6 @@ export function TopicsView({
             ) : null}
           </div>
 
-          <div className="row wrap" style={{ margin: '-2px 0 11px' }}>
-            <span className="count-note">
-              {list.length} shown · {scoped.length} in {def?.short}
-            </span>
-            <span className="count-note dim" style={{ marginLeft: 12 }}>
-              j/k move · enter open
-            </span>
-            <span className="spacer" />
-            <button
-              className="btn xs ghost"
-              onClick={() =>
-                setPicked((p) => (p.size === ordered.length ? new Set() : new Set(ordered.map((t) => t.id))))
-              }
-            >
-              {picked.size === ordered.length && ordered.length ? 'Deselect all' : 'Select all'}
-            </button>
-            {grouped ? (
-              <>
-                <button className="btn xs ghost" onClick={() => store.setAllCollapsed(cats.map(slug), false)}>
-                  Expand
-                </button>
-                <button className="btn xs ghost" onClick={() => store.setAllCollapsed(cats.map(slug), true)}>
-                  Collapse
-                </button>
-              </>
-            ) : null}
-          </div>
 
           {ordered.length === 0 ? (
             <div className="panel">
@@ -364,6 +347,16 @@ export function TopicsView({
       {picked.size ? (
         <div className="bulk" role="region" aria-label="Bulk actions">
           <span className="bulk-n">{picked.size} selected</span>
+          <button
+            className="btn xs ghost"
+            onClick={() =>
+              setPicked((p) =>
+                p.size === ordered.length ? new Set() : new Set(ordered.map((t) => t.id)),
+              )
+            }
+          >
+            {picked.size === ordered.length ? 'Deselect all' : `Select all ${ordered.length}`}
+          </button>
           <span className="spacer" />
           <button className="btn xs" onClick={() => { store.bulkStatus(pickedIds, 'Completed'); setPicked(new Set()); }}>
             Complete

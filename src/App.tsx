@@ -204,6 +204,7 @@ export default function App() {
             <Dashboard
               state={state}
               onOpen={openDrawer}
+              onGo={go}
               onExport={() => store.exportData()}
               onImport={() => fileRef.current?.click()}
             />

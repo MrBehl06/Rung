@@ -33,6 +33,9 @@ export function TopicCard({
   const done = t.status === 'Completed';
   const due = daysUntilDue(t);
   const overdue = due !== null && due <= 0 && done;
+  // a topic you have reviewed but that sits back at rung 0 is one you fumbled —
+  // that predicts what to redo far better than its nominal difficulty does
+  const struggled = t.status === 'Needs Revision' || (t.revisionCount > 0 && (t.srStep ?? 0) === 0);
 
   return (
     <article
@@ -84,7 +87,13 @@ export function TopicCard({
       {showCategory ? <span className="tcard-cat">{t.category}</span> : null}
 
       <div className="tcard-foot">
-        <span className={`d-${t.difficulty}`}>{t.difficulty}</span>
+        {struggled ? (
+          <span className="d-struggled" title="Dropped back to the start of the review ladder">
+            struggled
+          </span>
+        ) : (
+          <span className={`d-${t.difficulty}`}>{t.difficulty}</span>
+        )}
         <span className="xp-tag">+{xpFor(t)}</span>
         <span className="spacer" />
         <span className="tcard-acts">

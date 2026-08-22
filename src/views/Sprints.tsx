@@ -7,7 +7,7 @@ import { toast } from '../lib/toasts';
 import { Empty, SHead } from '../components/hud';
 import { SprintCard, TeaserCard } from '../components/SprintCard';
 
-export function Sprints({ state }: { state: TrackerState }) {
+export function Sprints({ state, onNew }: { state: TrackerState; onNew: () => void }) {
   const joined = joinedSprintDefs(state);
   const available = unjoinedSprintDefs(state);
 
@@ -19,7 +19,15 @@ export function Sprints({ state }: { state: TrackerState }) {
 
   return (
     <section className="view">
-      <SHead title="Interview sprints" sub="Pick what you are preparing for" />
+      <SHead
+        title="Interview Sprints"
+        sub="Pick what you are preparing for"
+        right={
+          <button className="btn primary" onClick={onNew}>
+            + New
+          </button>
+        }
+      />
 
       {joined.length ? (
         <div className="sprint-grid">

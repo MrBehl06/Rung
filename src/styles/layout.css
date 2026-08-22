@@ -1,4 +1,4 @@
-/* App shell: sidebar, topbar, mobile nav, responsive layout. */
+/* App shell: sidebar, mobile nav, responsive layout. */
 /* ---------- app shell: fixed rail + scrolling column ---------- */
 .shell{--rail-w:248px;display:block}
 .shell.rail{--rail-w:68px}
@@ -13,8 +13,8 @@
 .side-brand{display:flex;align-items:center;gap:10px;padding:2px 4px 0}
 .side-brand .logo{
   width:32px;height:32px;flex:none;display:grid;place-items:center;font-family:var(--mono);
-  font-size:13px;font-weight:800;color:#07070c;
-  background:linear-gradient(140deg,var(--xp),var(--xp-2));
+  font-size:13px;font-weight:800;color:var(--panel);
+  background:var(--xp);
   border-radius:var(--r-sm);
   box-shadow:0 0 18px color-mix(in srgb,var(--xp) calc(var(--glow) * 60%),transparent);
 }
@@ -30,8 +30,8 @@
 
 .side-lv{
   width:30px;height:30px;flex:none;display:grid;place-items:center;
-  font-family:var(--mono);font-size:13px;font-weight:800;color:#07070c;
-  background:linear-gradient(140deg,var(--xp),var(--xp-2));
+  font-family:var(--mono);font-size:13px;font-weight:800;color:var(--panel);
+  background:var(--xp);
   clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
 }
 .side-hud-txt{display:flex;flex-direction:column;min-width:0;line-height:1.2}
@@ -90,13 +90,6 @@
 /* main column sits beside the rail */
 .main-col{margin-left:var(--rail-w);min-height:100vh;display:flex;flex-direction:column;transition:margin-left .16s ease}
 
-.topbar{
-  position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;
-  padding:11px 20px;
-  background:color-mix(in srgb,var(--bg) 84%,transparent);
-  backdrop-filter:saturate(150%) blur(14px);
-  border-bottom:1px solid var(--line);
-}
 /* omnibox launcher */
 
 .only-mobile{display:none}

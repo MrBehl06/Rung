@@ -39,6 +39,9 @@ function iso(year: number, month: number, day: number): string {
  */
 export function monthGrid(state: TrackerState, year: number, month: number): DayCell[] {
   const today = todayISO();
+  // loadState always supplies this, but a hand-edited or stripped import
+  // should not blank the whole month
+  const notes = state.dayNotes ?? {};
 
   let max = 1;
   for (const k of Object.keys(state.history)) max = Math.max(max, state.history[k]);
@@ -69,7 +72,7 @@ export function monthGrid(state: TrackerState, year: number, month: number): Day
       completions,
       level: completions > 0 ? Math.min(4, Math.ceil((completions / max) * 4)) : 0,
       dueReviews: key >= today ? (dueByDate[key] ?? 0) : 0,
-      hasNote: Boolean(state.dayNotes[key]?.text.trim()),
+      hasNote: Boolean(notes[key]?.text.trim()),
     });
   }
   return cells;

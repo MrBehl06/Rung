@@ -54,11 +54,13 @@ export function TopicsView({
   state,
   onOpen,
   onEdit,
+  onNew,
 }: {
   sprintId: string;
   state: TrackerState;
   onOpen: (id: string) => void;
   onEdit: (id: string) => void;
+  onNew: () => void;
 }) {
   const f = state.ui.filters;
   const sort = state.ui.sort ?? 'default';
@@ -177,10 +179,16 @@ export function TopicsView({
   return (
     <section className="view" style={{ ['--sprint' as string]: def?.accent ?? 'var(--hld)' }}>
       <header className="tv-head">
-        <h1 className="tv-title">
-          <span aria-hidden="true">{def?.icon}</span>
-          {def?.name ?? def?.short}
-        </h1>
+        <div className="tv-titlerow">
+          <h1 className="tv-title">
+            <span aria-hidden="true">{def?.icon}</span>
+            {def?.name ?? def?.short}
+          </h1>
+          <button className="btn primary" onClick={onNew}>
+            <Icon name="plus" size={13} />
+            New
+          </button>
+        </div>
         <p className="tv-sub">
           {s.done} of {s.total} cleared
           {s.prog ? ` · ${s.prog} active` : ''}

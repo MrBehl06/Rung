@@ -10,7 +10,7 @@ import { findCategory, matchTopic, runCommand } from './lib/commands';
 import { levelInfo } from './lib/game';
 import { reviewBuckets } from './lib/srs';
 import { PERSISTENT } from './lib/storage';
-import { Icon, IconSprite } from './components/Icons';
+import { IconSprite } from './components/Icons';
 import { MobileNav, Sidebar, navItems } from './components/Sidebar';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { TopicModal } from './components/TopicModal';
@@ -186,25 +186,18 @@ export default function App() {
       />
 
       <div className="main-col">
-        <header className="topbar">
-          <span className="spacer" />
-          <button className="btn primary" onClick={() => setModal({ id: null })}>
-            <Icon name="plus" size={13} />
-            <span className="lbl">New</span>
-          </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) store.importFile(f);
+            e.target.value = '';
+          }}
+        />
 
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json,.json"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) store.importFile(f);
-              e.target.value = '';
-            }}
-          />
-        </header>
 
         <main>
           {view === 'dashboard' && (
@@ -215,13 +208,14 @@ export default function App() {
               onImport={() => fileRef.current?.click()}
             />
           )}
-          {view === 'sprints' && <Sprints state={state} />}
+          {view === 'sprints' && <Sprints state={state} onNew={() => setModal({ id: null })} />}
           {view === 'sprint' && (
             <TopicsView
               sprintId={state.ui.activeSprint ?? state.joinedSprints[0] ?? 'hld'}
               state={state}
               onOpen={openDrawer}
               onEdit={openEdit}
+              onNew={() => setModal({ id: null })}
             />
           )}
           {view === 'calendar' && <Calendar state={state} onOpen={openDrawer} />}

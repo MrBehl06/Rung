@@ -13,7 +13,7 @@ export function blankState(): TrackerState {
     dayNotes: {},
     joinedSprints: [],
     ui: {
-      theme: 'dark',
+      theme: 'light',
       view: 'dashboard',
       activeSprint: null,
       collapsed: {},

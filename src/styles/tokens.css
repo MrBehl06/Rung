@@ -1,9 +1,10 @@
 /* Design tokens: palette, themes, scales. Must load first. */
 /* ============================================================
-   HLD + LLD Tracker — arcade HUD
-   Beveled panels, neon rails, heavy numerals. Nothing here is a
-   default rounded card: panels are clipped, tiles vary in size,
-   and colour is semantic (cyan=HLD, violet=LLD, gold=XP).
+   Interview Sprint Tracker — monochrome
+   Ink on white. There is no decorative colour: the accent is
+   near-black, and every hue that remains carries meaning —
+   green done, amber revise, red hard, and one muted tint per
+   sprint so tracks stay tellable apart.
    ============================================================ */
 
 *,*::before,*::after{box-sizing:border-box}
@@ -37,50 +38,55 @@ html{-webkit-text-size-adjust:100%}
 }
 
 html[data-theme="dark"]{
-  --bg:#07070c;
-  --bg-grid:rgba(255,255,255,.022);
-  --panel:#101019;
-  --panel-2:#16161f;
-  --panel-3:#1d1d28;
-  --line:#26263a;
-  --line-2:#39394f;
+  --bg:#0b0b0f;
+  --bg-grid:rgba(255,255,255,.016);
+  --panel:#16161c;
+  --panel-2:#1b1b22;
+  --panel-3:#23232c;
+  --line:#26262f;
+  --line-2:#383842;
   --tx:#f2f3f7;
-  --tx-2:#9d9db4;
-  --tx-3:#6a6a82;
-  --xp:#ffc541;
-  --xp-2:#ff9f1c;
-  --hld:#22d3ee;
-  --lld:#a855f7;
-  --ok:#34d977;
-  --warn:#ffb020;
-  --danger:#ff5c63;
-  --fire:#ff6b35;
-  --idle:#5d5d74;
-  --track:#1c1c28;
-  --glow:.34;
+  --tx-2:#9c9caa;
+  --tx-3:#6b6b7a;
+  /* the accent: ink inverted. Used for buttons, level numerals, progress,
+     focus rings — never for decoration. */
+  --xp:#f2f3f7;
+  --xp-2:#c9cad4;
+  /* muted per-sprint tints so tracks stay tellable apart without shouting */
+  --hld:#7d9cc4;
+  --lld:#a396c9;
+  --ok:#3fbf7a;
+  --warn:#d99a3c;
+  --danger:#e8636b;
+  --fire:#d97a4d;
+  --idle:#55555f;
+  --track:#23232c;
+  --glow:0;
 }
 
 html[data-theme="light"]{
-  --bg:#f4f5fa;
-  --bg-grid:rgba(15,18,40,.028);
+  --bg:#fafafb;
+  --bg-grid:rgba(15,18,40,.018);
   --panel:#ffffff;
-  --panel-2:#f7f8fc;
-  --panel-3:#eef0f7;
-  --line:#dfe2ee;
-  --line-2:#c3c8db;
-  --tx:#12121c;
-  --tx-2:#5a5f75;
-  --tx-3:#858aa0;
-  --xp:#c98100;
-  --xp-2:#e08a00;
-  --hld:#0e8fa8;
-  --lld:#7c3aed;
-  --ok:#12924f;
-  --warn:#a86400;
-  --danger:#d92d38;
-  --fire:#e2551d;
-  --idle:#8b90a6;
-  --track:#e4e7f1;
-  --glow:.14;
+  --panel-2:#f7f7f9;
+  --panel-3:#eeeef2;
+  --line:#e6e7ec;
+  --line-2:#d0d2da;
+  --tx:#111318;
+  --tx-2:#5c606c;
+  --tx-3:#8b8f9c;
+  /* the accent: ink. */
+  --xp:#111318;
+  --xp-2:#2c2f38;
+  /* muted per-sprint tints */
+  --hld:#3f6493;
+  --lld:#6b5b9a;
+  --ok:#10804a;
+  --warn:#96631a;
+  --danger:#c4323d;
+  --fire:#b8562a;
+  --idle:#9a9daa;
+  --track:#ececf0;
+  --glow:0;
 }
 

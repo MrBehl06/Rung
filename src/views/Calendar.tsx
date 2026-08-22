@@ -3,7 +3,7 @@ import type { TrackerState } from '../types';
 import { dayDetail, monthConsistency, monthGrid, monthLabel } from '../lib/calendar';
 import { todayISO } from '../lib/utils';
 import { SHead } from '../components/hud';
-import { DayNote } from '../components/DayNote';
+import { DayDrawer } from '../components/DayDrawer';
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -11,7 +11,7 @@ export function Calendar({ state, onOpen }: { state: TrackerState; onOpen: (id: 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
-  const [picked, setPicked] = useState<string | null>(todayISO());
+  const [picked, setPicked] = useState<string | null>(null);
 
   const cells = useMemo(() => monthGrid(state, year, month), [state, year, month]);
   const detail = useMemo(() => (picked ? dayDetail(state, picked) : null), [state, picked]);
@@ -59,9 +59,7 @@ export function Calendar({ state, onOpen }: { state: TrackerState; onOpen: (id: 
 
   return (
     <section className="view cal">
-      <div className="bento">
-        <div className="c7">
-        <div className="panel pad">
+      <div className="panel pad">
         <SHead
           title={label}
           sub={consistency == null ? undefined : `${consistency}% active`}
@@ -104,50 +102,16 @@ export function Calendar({ state, onOpen }: { state: TrackerState; onOpen: (id: 
             </button>
           ))}
         </div>
-        </div>
-        </div>
-
-        <div className="c5">
-      {detail ? (
-        <div className="panel pad" style={{ height: '100%' }}>
-          <SHead
-            title={detail.date}
-            sub={`${detail.completed.length} completed · ${detail.revised.length} revised`}
-          />
-          <DayNote date={detail.date} note={state.dayNotes[detail.date]} />
-
-          {detail.completed.length || detail.revised.length || detail.due.length ? (
-            <span className="dn-linked-lbl">linked</span>
-          ) : null}
-          <div className="cal-list">
-            {detail.completed.map((t) => (
-              <button key={`c${t.id}`} className="cal-item" onClick={() => onOpen(t.id)}>
-                <span className="cal-mark ok" aria-hidden="true">✓</span>
-                {t.name}
-              </button>
-            ))}
-            {detail.revised.map((t) => (
-              <button key={`r${t.id}`} className="cal-item" onClick={() => onOpen(t.id)}>
-                <span className="cal-mark" aria-hidden="true">↻</span>
-                {t.name}
-              </button>
-            ))}
-            {detail.due.map((t) => (
-              <button key={`d${t.id}`} className="cal-item" onClick={() => onOpen(t.id)}>
-                <span className="cal-mark warn" aria-hidden="true">◷</span>
-                {t.name} <em className="muted">due</em>
-              </button>
-            ))}
-          </div>
-          {detail.unaccounted > 0 ? (
-            <p className="muted cal-note">
-              +{detail.unaccounted} more completed this day, since re-completed elsewhere
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-        </div>
       </div>
+
+      {detail ? (
+        <DayDrawer
+          detail={detail}
+          state={state}
+          onClose={() => setPicked(null)}
+          onOpenTopic={onOpen}
+        />
+      ) : null}
     </section>
   );
 }

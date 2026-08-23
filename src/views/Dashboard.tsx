@@ -1,13 +1,17 @@
 import type { TrackerState } from '../types';
 import { getSprint } from '../data/sprints';
-import { suggestNext } from '../lib/stats';
+import { statsForSprint, suggestNext, todayTally } from '../lib/stats';
 import { levelInfo } from '../lib/game';
 import { reviewBuckets } from '../lib/srs';
-import { activeTopics } from '../lib/scope';
+import { completionStreak, weekProgress } from '../lib/streak';
+import { activeTopics, joinedSprintDefs } from '../lib/scope';
 import { parseNote } from '../lib/daynotes';
 import { store } from '../lib/store';
 import { todayISO } from '../lib/utils';
 import { Empty } from '../components/hud';
+
+/** half-finished topics surfaced above the pick-up list */
+const IN_FLIGHT_SHOWN = 3;
 
 interface Props {
   state: TrackerState;
@@ -20,23 +24,42 @@ interface Props {
 export function Dashboard({ state, onOpen, onGo, onExport, onImport }: Props) {
   const lv = levelInfo(state);
   const hasSprint = state.joinedSprints.length > 0;
+  const today = todayISO();
 
   // retention beats coverage — if anything is due, it outranks starting something new
   const buckets = reviewBuckets(state, undefined, activeTopics(state));
   const due = [...buckets.flagged, ...buckets.due];
 
-  // anything already listed as due must not reappear under "pick up"
-  const dueIds = new Set(due.map((t) => t.id));
+  // the rest of this page is debt; this is the one part that reports back
+  const day = todayTally(state, today);
+  const week = weekProgress(state);
+  const streak = completionStreak(state);
+  const hasRhythm = streak > 0 || week.hit > 0 || day.logged > 0;
+
+  // a topic must appear in exactly one group, and the earlier group wins
+  const shown = new Set(due.map((t) => t.id));
+
+  // work in flight is easy to lose inside "pick up", where it looks untouched
+  const inFlight = activeTopics(state)
+    .filter((t) => t.status === 'In Progress' && !shown.has(t.id))
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, IN_FLIGHT_SHOWN);
+  for (const t of inFlight) shown.add(t.id);
+
   const next = suggestNext(state, 8)
-    .filter((t) => !dueIds.has(t.id))
+    .filter((t) => !shown.has(t.id))
     .slice(0, 5);
 
   // whatever you planned for today, so the plan is not one click out of sight
-  const today = todayISO();
   const note = state.dayNotes[today];
   const open = note
     ? parseNote(note.text, note.checked).filter((l) => l.checkable && !l.checked)
     : [];
+
+  const coverage = joinedSprintDefs(state).map((def) => ({
+    def,
+    stat: statsForSprint(state, def.id),
+  }));
 
   return (
     <section className="view base">
@@ -50,6 +73,40 @@ export function Dashboard({ state, onOpen, onGo, onExport, onImport }: Props) {
           {lv.into} / {lv.span} XP
         </span>
       </div>
+
+      {hasRhythm ? (
+        <div className="base-today">
+          <div className="base-streak">
+            <span className="base-streak-n">{streak}</span>
+            <span className="base-streak-l">day{streak === 1 ? '' : 's'} in a row</span>
+          </div>
+
+          <div className="base-week">
+            <span className="base-week-top">
+              <span>this week</span>
+              <b className={week.done ? 'done' : ''}>
+                {week.hit}/{week.target}
+              </b>
+            </span>
+            <span
+              className="base-dots"
+              aria-label={`${week.hit} of ${week.target} days this week`}
+            >
+              {week.days.map((on, i) => (
+                <i key={i} className={on ? 'on' : ''} />
+              ))}
+            </span>
+          </div>
+
+          {day.logged || day.revised ? (
+            <p className="base-tally">
+              {day.logged ? <span>{day.logged} completed</span> : null}
+              {day.revised ? <span>{day.revised} revised</span> : null}
+              <em>+{day.xp} XP today</em>
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {due.length ? (
         <div className="base-next base-due">
@@ -89,6 +146,19 @@ export function Dashboard({ state, onOpen, onGo, onExport, onImport }: Props) {
         </div>
       ) : null}
 
+      {inFlight.length ? (
+        <div className="base-next">
+          <span className="base-lbl">in flight</span>
+          {inFlight.map((t) => (
+            <button key={t.id} className="base-row" onClick={() => onOpen(t.id)}>
+              <span className="base-row-n">{t.name}</span>
+              <span className="base-row-m">{getSprint(t.sprint)?.short}</span>
+              <span className="base-row-c" aria-hidden="true">›</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       {hasSprint ? (
         <div className="base-next">
           <span className="base-lbl">pick up</span>
@@ -113,6 +183,29 @@ export function Dashboard({ state, onOpen, onGo, onExport, onImport }: Props) {
           />
         </div>
       )}
+
+      {coverage.length ? (
+        <div className="base-next">
+          <span className="base-lbl">coverage</span>
+          {coverage.map(({ def, stat }) => (
+            <button
+              key={def.id}
+              className="base-cov"
+              style={{ ['--sprint' as string]: def.accent }}
+              onClick={() => store.openSprint(def.id)}
+            >
+              <span className="base-cov-n">{def.name}</span>
+              <span className="base-cov-m">
+                {stat.done} of {stat.total}
+              </span>
+              <span className="base-cov-p">{stat.pct}%</span>
+              <span className="base-cov-bar">
+                <i style={{ width: `${stat.pct}%` }} />
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {/* mobile only — the sidebar footer is unreachable without the drawer */}
       <div className="base-actions only-mobile">

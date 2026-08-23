@@ -9,7 +9,8 @@ import type {
 import { DIFFS } from '../types';
 import { SPRINTS, categoriesOf, categoryRank } from '../data/sprints';
 import { activeTopics } from './scope';
-import { pct } from './utils';
+import { XP_PER_REVISION, xpFor } from './game';
+import { pct, todayISO } from './utils';
 
 /** Every number on the dashboard comes from here — nothing is ever stored. */
 export function statsFor(list: Topic[]): Stat {
@@ -103,4 +104,32 @@ export function suggestNext(state: TrackerState, n = 5): Topic[] {
     .filter((t) => t.status !== 'Completed')
     .sort((a, b) => weight(a) - weight(b))
     .slice(0, n);
+}
+
+export interface DayTally {
+  /** completions logged today — the same count the calendar shades a day by */
+  logged: number;
+  /** topics whose most recent revision was today */
+  revised: number;
+  /** XP earned today: each completion by difficulty, plus a flat rate per revision */
+  xp: number;
+}
+
+/**
+ * What you actually did today.
+ *
+ * Lifetime-wide on purpose: leaving a sprint must never erase a day's work,
+ * for the same reason XP and history are unscoped.
+ */
+export function todayTally(state: TrackerState, today = todayISO()): DayTally {
+  let revised = 0;
+  let xp = 0;
+  for (const t of state.topics) {
+    if (t.lastRevisedAt === today) {
+      revised++;
+      xp += XP_PER_REVISION;
+    }
+    if (t.status === 'Completed' && t.dateCompleted === today) xp += xpFor(t);
+  }
+  return { logged: state.history[today] ?? 0, revised, xp };
 }

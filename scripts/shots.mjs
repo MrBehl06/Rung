@@ -37,10 +37,14 @@ const now = Date.now();
 const hist = {};
 for (let i = 0; i < 26; i++) { if (i % 5 === 3) continue; hist[iso(now - i * 864e5)] = 1 + (i % 3); }
 
+/** kept in sync with `done` below — the Base tally reads the history count */
+const DONE_TODAY = 10;
+
 const SEED = `(() => {
   const s = JSON.parse(localStorage.getItem('hld-lld-tracker/v1'));
   s.joinedSprints = ['hld','lld','blind75'];
   s.history = ${JSON.stringify(hist)};
+  s.history['${iso(now)}'] = ${DONE_TODAY};
   s.ui.theme = 'light';
   s.dayNotes = { '${iso(now)}': { text: 'revise CAP + PACELC\\n- finish sharding notes\\n- redo rate limiter LLD\\n- mock interview 7pm', checked: [1] } };
   const star = ['CAP Theorem','Sharding','Consistent Hashing','Observer','Two Sum','Coin Change'];
@@ -58,6 +62,7 @@ const SEED = `(() => {
       t.status = 'Needs Revision'; t.srDue = '${iso(now - 864e5)}'; t.revisionCount = 2;
     }
     if (t.name === 'Sharding') { t.status = 'In Progress'; t.dateStarted = '${iso(now)}'; }
+    if (t.name === 'Observer') { t.lastRevisedAt = '${iso(now)}'; t.revisionCount = 3; }
   });
   localStorage.setItem('hld-lld-tracker/v1', JSON.stringify(s));
 })()`;
@@ -94,6 +99,7 @@ await js(SEED);
 
 /** [file, view, height, click-after-load, crop-from-left as a fraction] */
 const SHOTS = [
+  ['base',      'dashboard', 1560, null, 0],
   ['sprints',   'sprints',  700, null, 0],
   ['sprint',    'sprint',   820, null, 0],
   ['review',    'revision', 680, null, 0],

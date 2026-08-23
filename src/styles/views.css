@@ -337,6 +337,61 @@
 
 .base-actions{display:none;gap:8px;margin-top:40px;justify-content:center}
 
+/* ---------- today: the streak, the week, and what you actually logged ---------- */
+.base-today{
+  display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px 26px;
+  padding-bottom:20px;margin-top:-16px;margin-bottom:38px;border-bottom:1px solid var(--line);
+}
+.base-streak{display:flex;align-items:baseline;gap:9px;min-width:0}
+.base-streak-n{
+  font-size:var(--fs-num);font-weight:800;line-height:1;letter-spacing:-.04em;
+  font-variant-numeric:tabular-nums;
+}
+.base-streak-l{font-size:var(--fs-sm);color:var(--tx-2)}
+.base-week{display:flex;flex-direction:column;gap:7px;min-width:140px}
+.base-week-top{
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3);
+  text-transform:uppercase;letter-spacing:.7px;
+}
+.base-week-top b{font-size:12px;color:var(--tx-2);letter-spacing:0}
+.base-week-top b.done{color:var(--ok)}
+.base-dots{display:flex;gap:4px}
+.base-dots i{
+  flex:1;height:5px;border-radius:999px;
+  background:color-mix(in srgb,var(--tx-3) 26%,transparent);
+}
+.base-dots i.on{background:var(--tx)}
+.base-tally{
+  grid-column:1/-1;margin:0;display:flex;flex-wrap:wrap;align-items:baseline;
+  font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3);
+}
+.base-tally > * + *::before{content:'\00b7';margin:0 8px}
+.base-tally em{font-style:normal;color:var(--xp)}
+
+/* ---------- per-sprint coverage ---------- */
+.base-cov{
+  display:grid;grid-template-columns:1fr auto auto;align-items:baseline;gap:0 12px;
+  width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);
+  padding:14px 4px 17px;font:inherit;color:inherit;cursor:pointer;
+  transition:padding-left var(--dur-fast) var(--ease-out);
+}
+.base-cov:hover{padding-left:10px}
+.base-cov-n{min-width:0;font-size:var(--fs-md);font-weight:600}
+.base-cov-m,.base-cov-p{
+  font-family:var(--mono);font-size:var(--fs-xs);font-variant-numeric:tabular-nums;
+  color:var(--tx-3);
+}
+.base-cov-p{color:var(--tx-2)}
+.base-cov-bar{
+  grid-column:1/-1;display:block;height:4px;margin-top:9px;
+  background:var(--track);border-radius:999px;overflow:hidden;
+}
+.base-cov-bar i{
+  display:block;height:100%;border-radius:999px;
+  background:linear-gradient(90deg,var(--sprint),color-mix(in srgb,var(--sprint) 55%,var(--xp)));
+}
+
 /* ============================================================
    REWARDS
    ============================================================ */
@@ -653,7 +708,7 @@
   .side-link:hover .si{transform:translateX(2px)}
 
   /* level numeral and progress bars ease rather than snap */
-  .base-bar i,.tv-bar i,.side-xp i,.meter > i{
+  .base-bar i,.tv-bar i,.side-xp i,.meter > i,.base-cov-bar i{
     transition:width .55s var(--ease-out);
   }
 

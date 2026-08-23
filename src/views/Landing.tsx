@@ -1,6 +1,8 @@
+import { useEffect, useRef } from 'react';
 import { SPRINTS } from '../data/sprints';
 import { useReveal } from '../hooks/useReveal';
 import { SpotlightCard } from '../components/SpotlightCard';
+import { Waves } from '../components/Waves';
 
 interface Feature {
   k: string;
@@ -104,13 +106,22 @@ function Band({ f }: { f: Feature }) {
 }
 
 export function Landing({ onOpen }: { onOpen: () => void }) {
+  const navRef = useRef<HTMLElement>(null);
   const stepsRef = useReveal<HTMLElement>();
   const privacyRef = useReveal<HTMLElement>();
   const total = SPRINTS.reduce((n, s) => n + s.categories.reduce((m, c) => m + c.rows.length, 0), 0);
 
+  // the nav only earns a border once there is content behind it
+  useEffect(() => {
+    const onScroll = () => navRef.current?.classList.toggle('stuck', window.scrollY > 12);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
     <div className="lp">
-      <header className="lp-nav">
+      <header className="lp-nav" ref={navRef}>
         <div className="lp-nav-in">
           <span className="lp-brand">
             <span className="lp-mark" aria-hidden="true">
@@ -130,6 +141,19 @@ export function Landing({ onOpen }: { onOpen: () => void }) {
       </header>
 
       <section className="lp-hero">
+        <div className="lp-waves" aria-hidden="true">
+          <Waves
+            lineColor="var(--wave)"
+            backgroundColor="transparent"
+            waveSpeedX={0.008}
+            waveSpeedY={0.004}
+            waveAmpX={26}
+            waveAmpY={14}
+            xGap={13}
+            yGap={34}
+          />
+        </div>
+
         <h1 className="lp-h1">
           <span>Interview prep,</span>
           <span>one rung at a time.</span>
@@ -154,17 +178,6 @@ export function Landing({ onOpen }: { onOpen: () => void }) {
         </div>
       </section>
 
-      <section className="lp-sprints" aria-label="What ships in">
-        {SPRINTS.map((s) => {
-          const n = s.categories.reduce((m, c) => m + c.rows.length, 0);
-          return (
-            <span className="lp-chip" key={s.id}>
-              <b>{s.name}</b>
-              <em>{n}</em>
-            </span>
-          );
-        })}
-      </section>
 
       {FEATURES.map((f) => (
         <Band key={f.k} f={f} />

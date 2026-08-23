@@ -628,3 +628,35 @@
   .streaks{gap:22px}
   .streak-stats{margin-left:0}
 }
+
+/* ============================================================
+   MICRO-MOTION — small, purposeful, compositor-only
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference){
+  /* a completed checkbox should feel like it landed */
+  @keyframes chkPop{0%{transform:scale(.82)}55%{transform:scale(1.12)}100%{transform:scale(1)}}
+  .chk[data-on="1"]{animation:chkPop 320ms var(--ease-spring)}
+
+  /* cards ease in when a track is expanded or a filter changes; capped so a
+     long list never staggers into a slow reveal */
+  @keyframes cardIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .tgrid .tcard{animation:cardIn .38s var(--ease-out) backwards}
+  .tgrid .tcard:nth-child(1){animation-delay:.00s}
+  .tgrid .tcard:nth-child(2){animation-delay:.02s}
+  .tgrid .tcard:nth-child(3){animation-delay:.04s}
+  .tgrid .tcard:nth-child(4){animation-delay:.06s}
+  .tgrid .tcard:nth-child(5){animation-delay:.08s}
+  .tgrid .tcard:nth-child(n+6){animation-delay:.10s}
+
+  /* the sidebar icon leans toward the label on hover */
+  .side-link .si{transition:transform var(--dur-fast) var(--ease-spring)}
+  .side-link:hover .si{transform:translateX(2px)}
+
+  /* level numeral and progress bars ease rather than snap */
+  .base-bar i,.tv-bar i,.side-xp i,.meter > i{
+    transition:width .55s var(--ease-out);
+  }
+
+  /* the day-note tick strikes through rather than blinking */
+  .dn-check span{transition:color var(--dur) var(--ease-out)}
+}

@@ -8,6 +8,19 @@ Track what you are actually preparing for. **HLD** and **LLD** ship as the first
 React + TypeScript + Vite. No backend, no account, no database.
 All progress lives in your browser's `localStorage` under the key `hld-lld-tracker/v1`.
 
+## Home page screenshots
+
+`/` shows real screenshots of the app, in `public/shots/`. **They go stale whenever the
+UI changes.** To refresh them:
+
+```bash
+npm run dev                                                  # one shell
+chrome --headless=new --remote-debugging-port=9222           # another
+npm run shots -- 5173                                        # port your dev server printed
+```
+
+The script seeds a representative save, visits each view, captures at 2x and writes WebP.
+
 ## Run it
 
 ```bash

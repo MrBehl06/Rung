@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react';
 
-/** content must never be permanently hidden if the observer never fires */
-const SAFETY_MS = 1400;
+/**
+ * Content must never be permanently hidden if the observer never fires — but
+ * this is a last resort, not a timeout. Too short and it reveals whole sections
+ * before the reader has scrolled to them, which throws the effect away.
+ */
+const SAFETY_MS = 4000;
 
 /**
  * Reveal an element the first time it scrolls into view.

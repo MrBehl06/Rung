@@ -3,13 +3,16 @@ import { SPRINTS } from '../data/sprints';
 import { useReveal } from '../hooks/useReveal';
 import { SpotlightCard } from '../components/SpotlightCard';
 import { Waves } from '../components/Waves';
+import { CalendarDemo, SprintsDemo, StreaksDemo, TopicsDemo } from '../components/LandingDemo';
 
 interface Feature {
   k: string;
   t: string;
   d: string;
-  shot: string;
-  alt: string;
+  /** a screenshot, or a live demo when motion explains it better */
+  shot?: string;
+  alt?: string;
+  demo?: () => React.JSX.Element;
   /** ink band rather than white */
   dark?: boolean;
   /** image left of the text instead of right */
@@ -21,8 +24,7 @@ const FEATURES: Feature[] = [
     k: 'Sprints',
     t: 'Pick what you are preparing for',
     d: 'High Level Design, Low Level Design and Blind 75 ship in. Join the ones you need and leave the rest — leaving quiets a track everywhere without deleting a single topic, note or point you earned.',
-    shot: 'sprints',
-    alt: 'The Sprints hub, showing three sprints with progress and a locked track',
+    demo: SprintsDemo,
     dark: true,
   },
   {
@@ -37,24 +39,21 @@ const FEATURES: Feature[] = [
     k: 'Calendar',
     t: 'A plan you actually wrote',
     d: 'Write on any day. A line starting with a dash becomes something you can tick off, and today’s unfinished lines follow you to the home screen. Past days shade by what you did; future days show what is coming due.',
-    shot: 'calendar',
-    alt: 'A month grid shaded by activity, with the streak band above it',
+    demo: CalendarDemo,
     dark: true,
   },
   {
     k: 'Topics',
     t: 'Everything about one idea, in one place',
     d: 'Notes that autosave, the blogs and videos that finally made it click, its review schedule and its history — all behind one click, all searchable from the list and the command bar.',
-    shot: 'resources',
-    alt: 'A topic drawer showing notes and three saved resource links',
+    demo: TopicsDemo,
     flip: true,
   },
   {
     k: 'Streaks',
     t: 'A weekly target, not a guilt trip',
     d: 'Aim for five days out of seven. Miss a Tuesday and nothing breaks — the week still lands. Your run is there too, quietly, for the stretches when it is going well.',
-    shot: 'sprint',
-    alt: 'A sprint page showing topic cards grouped by track',
+    demo: StreaksDemo,
     dark: true,
   },
   {
@@ -97,9 +96,15 @@ function Band({ f }: { f: Feature }) {
           <h2>{f.t}</h2>
           <p>{f.d}</p>
         </div>
-        <div className="lp-shot">
-          <img src={`/shots/${f.shot}.webp`} alt={f.alt} loading="lazy" decoding="async" />
-        </div>
+        {f.demo ? (
+          <div className="lp-demo">
+            <f.demo />
+          </div>
+        ) : (
+          <div className="lp-shot">
+            <img src={`/shots/${f.shot}.webp`} alt={f.alt} loading="lazy" decoding="async" />
+          </div>
+        )}
       </div>
     </section>
   );

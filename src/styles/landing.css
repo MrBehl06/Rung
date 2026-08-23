@@ -225,3 +225,126 @@ html[data-theme="dark"]{--wave:#2c2c36}
   .lp-hero{padding-top:8vh}
   .lp-hero-shot{margin-top:40px}
 }
+
+/* ============================================================
+   LIVE DEMOS
+   Markup that shows the idea instead of a still of it. Everything
+   animates from the `.in` class the reveal hook adds, so nothing
+   plays before the band is on screen.
+   ============================================================ */
+.lp-demo{display:flex;justify-content:center}
+.demo{
+  width:100%;max-width:440px;
+  padding:22px;border-radius:var(--r-lg);
+  border:1px solid var(--line);
+  background:color-mix(in srgb,var(--panel) 7%,transparent);
+}
+.lp-band:not(.ink) .demo{background:var(--panel);box-shadow:0 24px 50px -34px rgba(10,12,20,.26)}
+
+/* ---------- sprints ---------- */
+.demo-sprints{display:flex;flex-direction:column;gap:12px}
+.dm-card{
+  padding:14px 15px;border:1px solid var(--line);border-radius:var(--r-md);
+  display:flex;flex-direction:column;gap:7px;
+}
+.dm-card-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.dm-card-h b{font-size:var(--fs-sm);font-weight:650}
+.dm-card-h em{font-style:normal;font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3)}
+.dm-pct{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.dm-bar{display:block;height:4px;border-radius:999px;background:color-mix(in srgb,var(--tx-3) 22%,transparent);overflow:hidden}
+.dm-bar i{display:block;height:100%;width:0;border-radius:999px;background:currentColor}
+
+/* ---------- calendar ---------- */
+.demo-cal{display:flex;flex-direction:column;gap:9px}
+.dm-cal-head,.dm-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.dm-cal-head span{
+  text-align:center;font-family:var(--mono);font-size:9px;color:var(--tx-3);letter-spacing:.4px;
+}
+.dm-cell{
+  aspect-ratio:1;border-radius:5px;
+  background:color-mix(in srgb,var(--tx-3) 14%,transparent);
+}
+.dm-cell.on[data-l="1"]{background:color-mix(in srgb,var(--ok) 34%,transparent)}
+.dm-cell.on[data-l="2"]{background:color-mix(in srgb,var(--ok) 58%,transparent)}
+.dm-cell.on[data-l="3"]{background:color-mix(in srgb,var(--ok) 82%,transparent)}
+.dm-cell.today{box-shadow:0 0 0 1.5px currentColor}
+.dm-note{
+  margin-top:6px;padding-top:12px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;gap:8px;
+}
+.dm-note-t{font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3)}
+.dm-todo{display:flex;align-items:center;gap:9px;font-size:var(--fs-sm)}
+.dm-todo i{
+  width:14px;height:14px;flex:none;border-radius:4px;
+  border:1.5px solid color-mix(in srgb,var(--tx-3) 55%,transparent);
+}
+.dm-todo.done i{background:var(--ok);border-color:var(--ok)}
+.dm-todo.done{color:var(--tx-3);text-decoration:line-through}
+
+/* ---------- topic ---------- */
+.demo-topic{display:flex;flex-direction:column;gap:9px}
+.dm-topic-h b{display:block;font-size:var(--fs-lg);font-weight:750;letter-spacing:-.02em}
+.dm-topic-h em{font-style:normal;font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3)}
+.dm-notes{
+  margin:4px 0 6px;padding:12px 13px;border-radius:var(--r-sm);
+  border:1px solid var(--line);color:var(--tx-2);
+  font-size:var(--fs-sm);line-height:1.55;
+}
+.dm-lbl{
+  font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3);
+  text-transform:uppercase;letter-spacing:1px;
+}
+.dm-link{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);
+  font-size:var(--fs-sm);
+}
+.dm-link svg{flex:none;color:var(--tx-3)}
+.dm-link b{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dm-link em{font-style:normal;font-family:var(--mono);font-size:10px;color:var(--tx-3)}
+
+/* ---------- streaks ---------- */
+.demo-streak{display:flex;flex-direction:column;gap:20px}
+.dm-streak-top{display:flex;align-items:baseline;gap:13px}
+.dm-streak-n{
+  font-size:3.2rem;font-weight:800;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums;
+}
+.dm-streak-l{display:flex;flex-direction:column;font-size:var(--fs-sm)}
+.dm-streak-l em{font-style:normal;font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3)}
+.dm-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
+.dm-day{display:flex;flex-direction:column;align-items:center;gap:7px}
+.dm-day i{
+  width:100%;height:34px;border-radius:7px;
+  background:transparent;
+  border:1.5px dashed color-mix(in srgb,var(--tx-3) 42%,transparent);
+}
+.dm-day.on i{background:currentColor;border-color:transparent}
+.dm-day em{font-style:normal;font-family:var(--mono);font-size:9.5px;color:var(--tx-3)}
+.dm-streak-note{font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3)}
+
+/* ---------- the motion, once the band is revealed ---------- */
+@media (prefers-reduced-motion: no-preference){
+  @keyframes dmFill{from{width:0}to{width:var(--to)}}
+  @keyframes dmPop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:none}}
+  @keyframes dmSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes dmGrow{from{transform:scaleY(.18);opacity:.35}to{transform:none;opacity:1}}
+
+  .demo .dm-card{opacity:0}
+  .lp-reveal.in .demo .dm-card{animation:dmSlide .5s var(--ease-out) forwards;animation-delay:calc(.12s * var(--i))}
+  .lp-reveal.in .demo .dm-bar i{animation:dmFill .9s var(--ease-out) forwards;animation-delay:calc(.12s * var(--i) + .25s)}
+
+  .demo .dm-cell{opacity:0}
+  .lp-reveal.in .demo .dm-cell{animation:dmPop .34s var(--ease-spring) forwards;animation-delay:calc(.012s * var(--i) + .1s)}
+  .demo .dm-note{opacity:0}
+  .lp-reveal.in .demo .dm-note{animation:dmSlide .5s var(--ease-out) forwards;animation-delay:.6s}
+
+  .demo .dm-link{opacity:0}
+  .lp-reveal.in .demo .dm-link{animation:dmSlide .45s var(--ease-out) forwards;animation-delay:calc(.13s * var(--i) + .3s)}
+
+  .demo .dm-day i{transform-origin:bottom}
+  .lp-reveal.in .demo .dm-day i{animation:dmGrow .5s var(--ease-spring) backwards;animation-delay:calc(.07s * var(--i) + .15s)}
+}
+
+@media (max-width:860px){
+  .demo{max-width:none}
+}

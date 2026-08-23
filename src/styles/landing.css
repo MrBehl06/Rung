@@ -90,42 +90,84 @@
 .lp-shot img{width:100%;max-height:560px;object-fit:cover;object-position:top center}
 
 /* the ink band inverts every token it needs rather than hardcoding colours */
-.lp-band.ink{
+.lp-band.ink,.lp-steps.ink{
   background:var(--tx);color:var(--panel);
   --tx-2:color-mix(in srgb,var(--panel) 70%,transparent);
   --tx-3:color-mix(in srgb,var(--panel) 48%,transparent);
   --line:color-mix(in srgb,var(--panel) 16%,transparent);
 }
 .lp-band.ink .lp-shot{box-shadow:0 30px 70px -30px rgba(0,0,0,.55)}
+.lp-steps.ink .spot:hover{transform:translateY(-3px)}
 
 /* ---------- three steps ---------- */
-.lp-steps{padding:clamp(70px,11vw,132px) 0 0}
+.lp-steps{padding:clamp(80px,12vw,140px) 0}
 .lp-steps-in{max-width:var(--lp-w);margin:0 auto;padding:0 var(--lp-pad)}
+.lp-steps-head{max-width:34rem;margin-bottom:clamp(38px,5vw,58px)}
 .lp-steps h2{
-  margin:0 0 40px;font-size:clamp(1.6rem,1.1rem + 1.7vw,2.6rem);
-  font-weight:780;letter-spacing:-.035em;
+  margin:14px 0 0;font-size:clamp(1.6rem,1.1rem + 1.7vw,2.6rem);
+  font-weight:780;letter-spacing:-.035em;line-height:1.12;
 }
-.lp-steps ol{
-  list-style:none;margin:0;padding:38px 0 0;border-top:1px solid var(--line);
-  display:grid;gap:36px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+.lp-step-grid{
+  list-style:none;margin:0;padding:0;
+  display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
 }
-.lp-steps li{display:flex;flex-direction:column;gap:10px}
+.lp-step-grid li{display:flex}
+
+/* spotlight card — adapted from React Bits, driven by tokens so it works in
+   both themes and on either band colour */
+.spot{
+  position:relative;overflow:hidden;flex:1;
+  display:flex;flex-direction:column;gap:11px;
+  padding:26px 24px 22px;border-radius:var(--r-lg);
+  border:1px solid var(--line);
+  background:color-mix(in srgb,var(--panel) 6%,transparent);
+  --mx:50%; --my:50%;
+  transition:border-color var(--dur) var(--ease-out),transform var(--dur) var(--ease-spring);
+}
+.spot::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(
+    340px circle at var(--mx) var(--my),
+    color-mix(in srgb,var(--panel) 14%,transparent),
+    transparent 72%
+  );
+  opacity:0;transition:opacity .45s var(--ease-out);
+}
+.spot:hover,.spot:focus-within{border-color:color-mix(in srgb,var(--panel) 34%,transparent)}
+.spot:hover::before,.spot:focus-within::before{opacity:1}
+
 .lp-step-n{
-  width:26px;height:26px;display:grid;place-items:center;border-radius:50%;
-  background:var(--xp);color:var(--panel);
-  font-family:var(--mono);font-size:12px;font-weight:800;
+  font-family:var(--mono);font-size:var(--fs-xs);font-weight:700;
+  color:var(--tx-3);letter-spacing:1px;
 }
-.lp-steps b{font-size:var(--fs-lg);font-weight:700;letter-spacing:-.015em}
-.lp-steps li span:last-child{color:var(--tx-2);font-size:var(--fs-sm);line-height:1.6}
+.lp-step-grid b{font-size:var(--fs-lg);font-weight:700;letter-spacing:-.018em}
+.lp-step-grid p{margin:0;color:var(--tx-2);font-size:var(--fs-sm);line-height:1.62}
+.lp-step-note{
+  margin-top:auto;padding-top:14px;
+  font-family:var(--mono);font-size:var(--fs-xs);color:var(--tx-3);
+  border-top:1px solid var(--line);
+}
 
 /* ---------- privacy ---------- */
-.lp-privacy{padding:clamp(70px,11vw,132px) 0 0}
-.lp-privacy-in{max-width:var(--lp-w);margin:0 auto;padding:0 var(--lp-pad);max-width:44rem}
+.lp-privacy{padding:clamp(80px,12vw,140px) 0 0}
+.lp-privacy-in{
+  max-width:var(--lp-w);margin:0 auto;padding:0 var(--lp-pad);
+  display:grid;gap:clamp(30px,5vw,64px);align-items:start;
+  grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);
+}
+.lp-privacy-txt{max-width:34rem}
 .lp-privacy h2{
   margin:14px 0 0;font-size:clamp(1.6rem,1.1rem + 1.7vw,2.6rem);
   font-weight:780;letter-spacing:-.035em;line-height:1.12;
 }
 .lp-privacy p{margin:16px 0 0;color:var(--tx-2);font-size:var(--fs-lg);line-height:1.62}
+.lp-facts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px}
+.lp-facts li{display:flex;align-items:baseline;gap:14px;border-top:1px solid var(--line);padding-top:16px}
+.lp-facts b{
+  font-size:2rem;font-weight:800;letter-spacing:-.04em;line-height:1;
+  font-variant-numeric:tabular-nums;min-width:1.4ch;
+}
+.lp-facts span{color:var(--tx-2);font-size:var(--fs-sm)}
 
 /* ---------- closing ---------- */
 .lp-end{
@@ -174,7 +216,7 @@
 }
 
 @media (max-width:860px){
-  .lp-band-in{grid-template-columns:minmax(0,1fr)}
+  .lp-band-in,.lp-privacy-in{grid-template-columns:minmax(0,1fr)}
   .lp-band.flip .lp-band-in{direction:ltr}
   .lp-hero{padding-top:8vh}
   .lp-hero-shot{margin-top:40px}

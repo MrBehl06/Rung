@@ -1,5 +1,6 @@
 import { SPRINTS } from '../data/sprints';
 import { useReveal } from '../hooks/useReveal';
+import { SpotlightCard } from '../components/SpotlightCard';
 
 interface Feature {
   k: string;
@@ -64,10 +65,24 @@ const FEATURES: Feature[] = [
   },
 ];
 
-const STEPS: [string, string][] = [
-  ['Join a sprint', 'Or all three. You can change your mind whenever you like.'],
-  ['Work through it', 'Tick topics off. Notes, links and difficulty ride along.'],
-  ['Let it come back', 'Review resurfaces things right before you would have forgotten.'],
+interface Step { t: string; d: string; note: string }
+
+const STEPS: Step[] = [
+  {
+    t: 'Join a sprint',
+    d: 'Or all three. Nothing is locked, and you can change your mind whenever you like.',
+    note: '189 topics waiting',
+  },
+  {
+    t: 'Work through it',
+    d: 'Tick topics off as you go. Notes, links and difficulty ride along with each one.',
+    note: 'Notes autosave',
+  },
+  {
+    t: 'Let it come back',
+    d: 'Review resurfaces each topic right before you would have forgotten it. You just show up.',
+    note: '1d → 120d ladder',
+  },
 ];
 
 function Band({ f }: { f: Feature }) {
@@ -155,15 +170,21 @@ export function Landing({ onOpen }: { onOpen: () => void }) {
         <Band key={f.k} f={f} />
       ))}
 
-      <section className="lp-steps lp-reveal" ref={stepsRef}>
+      <section className="lp-steps lp-reveal ink" ref={stepsRef}>
         <div className="lp-steps-in">
-          <h2>Three steps, then it runs itself.</h2>
-          <ol>
-            {STEPS.map(([t, d], i) => (
-              <li key={t}>
-                <span className="lp-step-n">{i + 1}</span>
-                <b>{t}</b>
-                <span>{d}</span>
+          <div className="lp-steps-head">
+            <span className="lp-k">How it goes</span>
+            <h2>Three steps, then it runs itself.</h2>
+          </div>
+          <ol className="lp-step-grid">
+            {STEPS.map((s, i) => (
+              <li key={s.t}>
+                <SpotlightCard>
+                  <span className="lp-step-n">{String(i + 1).padStart(2, '0')}</span>
+                  <b>{s.t}</b>
+                  <p>{s.d}</p>
+                  <span className="lp-step-note">{s.note}</span>
+                </SpotlightCard>
               </li>
             ))}
           </ol>
@@ -172,13 +193,29 @@ export function Landing({ onOpen }: { onOpen: () => void }) {
 
       <section className="lp-privacy lp-reveal" ref={privacyRef}>
         <div className="lp-privacy-in">
-          <span className="lp-k">Private by construction</span>
-          <h2>There is no server to trust.</h2>
-          <p>
-            No account, no sign-in, no analytics, no network calls. Everything lives in this
-            browser’s storage, which means it works on a plane and it is yours to export as a
-            single JSON file whenever you want it somewhere else.
-          </p>
+          <div className="lp-privacy-txt">
+            <span className="lp-k">Private by construction</span>
+            <h2>There is no server to trust.</h2>
+            <p>
+              No account, no sign-in, no analytics, no network calls. Everything lives in this
+              browser’s storage, which means it works on a plane and it is yours to export as a
+              single JSON file whenever you want it somewhere else.
+            </p>
+          </div>
+          <ul className="lp-facts">
+            <li>
+              <b>0</b>
+              <span>network requests</span>
+            </li>
+            <li>
+              <b>0</b>
+              <span>accounts to make</span>
+            </li>
+            <li>
+              <b>1</b>
+              <span>file to export it all</span>
+            </li>
+          </ul>
         </div>
       </section>
 
